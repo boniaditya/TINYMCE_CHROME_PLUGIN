@@ -1,0 +1,68 @@
+{
+  "manifest_version": 3,
+  "name": "Page Studio Inline Editor",
+  "description": "Select any webpage element and edit it in-place with an inline editor.",
+  "version": "0.1.0",
+  "permissions": [
+    "activeTab",
+    "storage",
+    "scripting",
+    "unlimitedStorage"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "action": {
+    "default_title": "Notes",
+    "default_popup": "src/notes.html"
+  },
+  "background": {
+    "service_worker": "src/background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "src/content.js"
+      ],
+      "run_at": "document_idle",
+      "all_frames": false
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "src/page-editor-bridge.js",
+        "vendor/tinymce/*",
+        "vendor/tinymce/*/*",
+        "vendor/tinymce/*/*/*",
+        "vendor/tinymce/*/*/*/*",
+        "vendor/tiptap/*",
+        "vendor/tiptap/*/*",
+        "vendor/ckeditor/*",
+        "vendor/ckeditor/*/*",
+        "vendor/ckeditor/*/*/*",
+        "vendor/ckeditor/*/*/*/*",
+        "vendor/ckeditor/*/*/*/*/*",
+        "vendor/aloha/*",
+        "vendor/aloha/*/*",
+        "vendor/aloha/*/*/*",
+        "vendor/aloha/*/*/*/*"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
+    }
+  ],
+  "commands": {
+    "toggle-editor": {
+      "suggested_key": {
+        "default": "Alt+Shift+E",
+        "mac": "Alt+Shift+E"
+      },
+      "description": "Toggle direct inline page editing"
+    }
+  }
+}

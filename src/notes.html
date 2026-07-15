@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Notes</title>
+    <link rel="stylesheet" href="notes.css">
+  </head>
+  <body>
+    <main class="notes">
+      <header class="notes__header">
+        <div class="notes__brand">
+          <span class="notes__logo" aria-hidden="true">📝</span>
+          <div>
+            <h1>Notes</h1>
+            <p id="subtitle">Quick notepad.pw scratchpads</p>
+          </div>
+        </div>
+      </header>
+
+      <button id="newNoteButton" class="new-note" type="button">
+        <span class="new-note__icon" aria-hidden="true">+</span>
+        <span>New Note</span>
+      </button>
+
+      <section class="list" aria-label="Saved notes">
+        <div class="list__head">
+          <span id="listTitle">Recent notes</span>
+          <button id="clearAllButton" class="link-button" type="button" hidden>Clear all</button>
+        </div>
+
+        <ul id="noteList" class="note-items"></ul>
+
+        <div id="emptyState" class="empty">
+          <span class="empty__icon" aria-hidden="true">🗒️</span>
+          <p>No notes yet.</p>
+          <p class="empty__hint">Click <strong>New Note</strong> to open a fresh notepad.pw page.</p>
+        </div>
+      </section>
+
+      <footer class="notes__footer">
+        <a id="openEditor" href="#" class="link-button">Open Page Editor</a>
+      </footer>
+    </main>
+    <script src="notes.js"></script>
+  </body>
+</html>

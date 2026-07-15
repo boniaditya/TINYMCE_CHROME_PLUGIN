@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Page Studio CKEditor</title>
+    <link rel="stylesheet" href="ck-editor-tab.css">
+  </head>
+  <body>
+    <main class="workspace">
+      <header class="topbar">
+        <div class="title-block">
+          <h1 id="pageTitle">CKEditor</h1>
+          <p id="pageUrl">Loading snapshot</p>
+        </div>
+        <div class="actions">
+          <button id="previewButton" type="button">Preview</button>
+          <button id="sourceButton" type="button">Source</button>
+          <button id="copyButton" type="button">Copy HTML</button>
+          <button id="applyButton" type="button">Apply to Tab</button>
+          <button id="downloadButton" class="primary" type="button">Download</button>
+        </div>
+      </header>
+
+      <section class="status-row">
+        <span id="editorStatus">Loading CKEditor workspace</span>
+        <span id="snapshotMeta"></span>
+      </section>
+
+      <section class="editor-layout">
+        <div class="editor-pane">
+          <textarea id="htmlSource" spellcheck="false"></textarea>
+          <div id="nativeEditor" contenteditable="true" spellcheck="true"></div>
+        </div>
+        <aside class="preview-pane">
+          <iframe id="previewFrame" title="Website preview" sandbox="allow-same-origin"></iframe>
+        </aside>
+      </section>
+    </main>
+
+    <script src="ck-editor-tab.js"></script>
+  </body>
+</html>

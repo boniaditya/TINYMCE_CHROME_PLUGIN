@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Page Studio</title>
+    <link rel="stylesheet" href="popup.css">
+  </head>
+  <body>
+    <main class="popup">
+      <header class="popup__header">
+        <div>
+          <h1>Page Studio</h1>
+          <p id="statusText">Ready</p>
+        </div>
+        <span id="stateDot" class="state-dot" aria-hidden="true"></span>
+      </header>
+
+      <label class="field" for="editorSelect">
+        <span>Editor</span>
+        <select id="editorSelect">
+          <option value="native">Native Inline</option>
+          <option value="tinymce">TinyMCE Inline</option>
+          <option value="tiptap">Tiptap Inline</option>
+          <option value="ckeditor">CKEditor Inline</option>
+          <option value="aloha">Aloha Editor</option>
+          <option value="html">HTML Source</option>
+          <option value="plain">Plain Text</option>
+          <option value="page">Whole Page</option>
+        </select>
+      </label>
+
+      <section class="switches" aria-label="Editor preferences">
+        <label>
+          <input id="autosaveInput" type="checkbox">
+          <span>Drafts</span>
+        </label>
+        <label>
+          <input id="outlinesInput" type="checkbox">
+          <span>Outlines</span>
+        </label>
+        <label>
+          <input id="sanitizeInput" type="checkbox">
+          <span>Sanitize</span>
+        </label>
+      </section>
+
+      <button id="toggleButton" class="primary" type="button">Start Editing</button>
+      <button id="openCkPageButton" class="secondary" type="button">Edit Full Page in CKEditor</button>
+      <button id="clearDraftsButton" class="secondary" type="button">Clear Drafts</button>
+    </main>
+    <script src="popup.js"></script>
+  </body>
+</html>
