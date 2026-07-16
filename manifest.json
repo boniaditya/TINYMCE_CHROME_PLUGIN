@@ -1,20 +1,31 @@
 {
   "manifest_version": 3,
-  "name": "Page Studio Inline Editor",
-  "description": "Select any webpage element and edit it in-place with an inline editor.",
+  "name": "Notepad — notepad.pw Notes & Folders",
+  "description": "Create, organize in folders, and open notepad.pw pages and rich-text notes (TinyMCE, Tiptap, plain text) from a sidebar on any page.",
   "version": "0.1.0",
   "permissions": [
-    "activeTab",
     "storage",
-    "scripting",
     "unlimitedStorage"
   ],
   "host_permissions": [
-    "<all_urls>"
+    "https://notepad.pw/*",
+    "https://notepad.cc/*"
   ],
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
   "action": {
     "default_title": "Notes",
-    "default_popup": "src/notes.html"
+    "default_popup": "src/notes.html",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png",
+      "48": "icons/icon-48.png",
+      "128": "icons/icon-128.png"
+    }
   },
   "background": {
     "service_worker": "src/background.js"
@@ -22,18 +33,10 @@
   "content_scripts": [
     {
       "matches": [
-        "<all_urls>"
-      ],
-      "js": [
-        "src/content.js"
-      ],
-      "run_at": "document_idle",
-      "all_frames": false
-    },
-    {
-      "matches": [
         "https://notepad.pw/*",
-        "http://notepad.pw/*"
+        "http://notepad.pw/*",
+        "https://notepad.cc/*",
+        "http://notepad.cc/*"
       ],
       "js": [
         "src/notepad-sidebar.js"
@@ -45,36 +48,17 @@
   "web_accessible_resources": [
     {
       "resources": [
-        "src/page-editor-bridge.js",
         "src/note-editor.html",
         "vendor/tinymce/*",
         "vendor/tinymce/*/*",
         "vendor/tinymce/*/*/*",
         "vendor/tinymce/*/*/*/*",
         "vendor/tiptap/*",
-        "vendor/tiptap/*/*",
-        "vendor/ckeditor/*",
-        "vendor/ckeditor/*/*",
-        "vendor/ckeditor/*/*/*",
-        "vendor/ckeditor/*/*/*/*",
-        "vendor/ckeditor/*/*/*/*/*",
-        "vendor/aloha/*",
-        "vendor/aloha/*/*",
-        "vendor/aloha/*/*/*",
-        "vendor/aloha/*/*/*/*"
+        "vendor/tiptap/*/*"
       ],
       "matches": [
         "<all_urls>"
       ]
     }
-  ],
-  "commands": {
-    "toggle-editor": {
-      "suggested_key": {
-        "default": "Alt+Shift+E",
-        "mac": "Alt+Shift+E"
-      },
-      "description": "Toggle direct inline page editing"
-    }
-  }
+  ]
 }

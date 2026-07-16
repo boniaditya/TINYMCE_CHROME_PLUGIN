@@ -2,9 +2,7 @@ const STORAGE_KEY = "notepadHistory";
 
 const EDITOR_LABELS = {
   tinymce: "TinyMCE",
-  ckeditor: "CKEditor",
   tiptap: "Tiptap",
-  jck: "JCK",
   plain: "Plain Text",
   native: "Rich Text"
 };
@@ -64,10 +62,6 @@ async function startEditor(content) {
   if (state.type === "tinymce") {
     return startTinyMce(content);
   }
-  // JCK is a CKEditor distribution, so it runs on the vendored CKEditor engine.
-  if (state.type === "ckeditor" || state.type === "jck") {
-    return startCkEditor(content);
-  }
   if (state.type === "tiptap") {
     return startTiptap(content);
   }
@@ -113,39 +107,6 @@ async function startTinyMce(content) {
 
   state.instance = editor;
   state.getContent = () => editor.getContent();
-}
-
-async function startCkEditor(content) {
-  await loadScript(assetUrl("vendor/ckeditor/ckeditor.js"));
-  if (!window.CKEDITOR?.replace) throw new Error("ckeditor-unavailable");
-
-  // Use replace + divarea (persistent top toolbar) rather than inline mode:
-  // the inline floating toolbar doesn't render reliably on the extension page,
-  // which left formatting buttons unavailable.
-  richEditor.hidden = true;
-  plainEditor.hidden = false;
-  plainEditor.value = content;
-
-  const editor = window.CKEDITOR.replace(plainEditor, {
-    versionCheck: false,
-    allowedContent: true,
-    extraAllowedContent: "*(*);*{*}",
-    extraPlugins: "divarea",
-    removePlugins: "elementspath,exportpdf",
-    height: Math.max(360, window.innerHeight - 220),
-    toolbar: [
-      { name: "clipboard", items: ["Undo", "Redo"] },
-      { name: "styles", items: ["Format", "Font", "FontSize"] },
-      { name: "basicstyles", items: ["Bold", "Italic", "Underline", "Strike", "RemoveFormat"] },
-      { name: "paragraph", items: ["NumberedList", "BulletedList", "Blockquote"] },
-      { name: "links", items: ["Link", "Unlink"] },
-      { name: "insert", items: ["Image", "Table", "HorizontalRule"] }
-    ]
-  });
-
-  state.instance = editor;
-  state.getContent = () => editor.getData();
-  editor.on("change", scheduleSave);
 }
 
 async function startTiptap(content) {

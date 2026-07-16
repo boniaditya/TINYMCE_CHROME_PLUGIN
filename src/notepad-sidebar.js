@@ -3,6 +3,7 @@
   const COLLAPSE_KEY = "notepadSidebarCollapsed";
   const FOLDERS_KEY = "notepadFolders";
   const NOTEPAD_BASE = "https://notepad.pw/";
+  const NOTEPADCC_BASE = "https://notepad.cc/";
   const HOST_ID = "page-studio-notepad-sidebar";
   const WIDTH_KEY = "notepadSidebarWidth";
   const DEFAULT_WIDTH = 280;
@@ -11,12 +12,15 @@
   let panelWidth = DEFAULT_WIDTH;
   const EDITOR_LABELS = {
     tinymce: "TinyMCE",
-    ckeditor: "CKEditor",
     tiptap: "Tiptap",
-    jck: "JCK",
     plain: "Plain Text",
     native: "Rich Text"
   };
+
+  // The notepad.pw logo (purple leaf), recreated as an inline SVG.
+  const PW_ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="18" height="18"><defs><linearGradient id="pwico" x1="0.15" y1="0.05" x2="0.9" y2="1"><stop offset="0" stop-color="#d24fd0"/><stop offset="0.55" stop-color="#a935bf"/><stop offset="1" stop-color="#7a1f9e"/></linearGradient><linearGradient id="pwfold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6a1a8f"/><stop offset="1" stop-color="#4e1170"/></linearGradient></defs><path d="M8 4C24 3 30 13 28 23 26.5 30 19 31 13 27.5 22 24 22 13 8 4Z" fill="url(#pwico)"/><path d="M13 27.5C8.5 25 7 18.5 9 13.5 13 17.5 15 23 13 27.5Z" fill="url(#pwfold)"/></svg>`;
+  // notepad.cc favicon (spiral notepad with a blue bar).
+  const CC_ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="18" height="18"><rect x="5.5" y="7" width="21" height="21" rx="3.5" fill="#ffffff" stroke="#8b98a3" stroke-width="1.6"/><g stroke="#cbd4da" stroke-width="1.7" stroke-linecap="round"><line x1="9" y1="13" x2="23" y2="13"/><line x1="9" y1="17" x2="23" y2="17"/><line x1="9" y1="21" x2="19" y2="21"/></g><rect x="6.6" y="23.4" width="18.8" height="3.4" rx="1.7" fill="#3d9be0"/><g fill="#2b2f33"><rect x="9" y="3.4" width="2.6" height="7.2" rx="1.3"/><rect x="14.7" y="3.4" width="2.6" height="7.2" rx="1.3"/><rect x="20.4" y="3.4" width="2.6" height="7.2" rx="1.3"/></g></svg>`;
 
   // Only run once per page, and only in the top frame.
   if (window.top !== window || document.getElementById(HOST_ID)) {
@@ -68,10 +72,9 @@
           <p class="modal__sub">Where do you want to write?</p>
           <div class="modal__options">
             <button class="opt" type="button" data-editor="notepad"><span class="opt__icon">🌐</span><span class="opt__text"><span class="opt__title">notepad.pw</span><span class="opt__desc">Open a fresh online notepad page</span></span></button>
+            <button class="opt" type="button" data-editor="notepadcc"><span class="opt__icon">🗒️</span><span class="opt__text"><span class="opt__title">notepad.cc</span><span class="opt__desc">Open a fresh notepad.cc page</span></span></button>
             <button class="opt" type="button" data-editor="tinymce"><span class="opt__icon">✍️</span><span class="opt__text"><span class="opt__title">TinyMCE</span><span class="opt__desc">Rich text editor with a toolbar</span></span></button>
-            <button class="opt" type="button" data-editor="ckeditor"><span class="opt__icon">📄</span><span class="opt__text"><span class="opt__title">CKEditor</span><span class="opt__desc">Rich text editor with a toolbar</span></span></button>
             <button class="opt" type="button" data-editor="tiptap"><span class="opt__icon">⚡</span><span class="opt__text"><span class="opt__title">Tiptap</span><span class="opt__desc">Minimal keyboard-first editor</span></span></button>
-            <button class="opt" type="button" data-editor="jck"><span class="opt__icon">🧱</span><span class="opt__text"><span class="opt__title">JCK</span><span class="opt__desc">JCK Editor (CKEditor-based)</span></span></button>
             <button class="opt" type="button" data-editor="plain"><span class="opt__icon">📝</span><span class="opt__text"><span class="opt__title">Plain Text</span><span class="opt__desc">A simple distraction-free notepad</span></span></button>
           </div>
         </div>
@@ -196,7 +199,8 @@
   // If the visitor landed on a notepad.pw note directly, keep the list complete.
   // Only notepad.pw pages self-register; editor notes are created elsewhere.
   async function captureCurrentNote() {
-    if (location.hostname !== "notepad.pw") return;
+    const base = notepadBaseForHost();
+    if (!base) return;
     const slug = currentSlug();
     if (!slug || notes.some((note) => note.id === slug)) {
       return;
@@ -204,16 +208,23 @@
     notes.unshift({
       id: slug,
       type: "notepad",
-      url: `${NOTEPAD_BASE}${slug}`,
+      url: `${base}${slug}`,
       title: formatTitle(new Date()),
       createdAt: Date.now()
     });
     await save();
   }
 
+  // The base URL for the online notepad the sidebar is currently on (if any).
+  function notepadBaseForHost() {
+    if (location.hostname === "notepad.pw") return NOTEPAD_BASE;
+    if (location.hostname === "notepad.cc") return NOTEPADCC_BASE;
+    return "";
+  }
+
   // The id of the note shown on the current page, so it can be highlighted.
   function currentSlug() {
-    if (location.hostname === "notepad.pw") {
+    if (notepadBaseForHost()) {
       const slug = decodeURIComponent(location.pathname.replace(/^\/+/, "").replace(/\/+$/, ""));
       return slug && !slug.includes("/") ? slug : "";
     }
@@ -232,15 +243,17 @@
 
   async function chooseEditor(editor, newTab) {
     if (editor === "notepad") {
-      await createNote(newTab);
+      await createNote(NOTEPAD_BASE, newTab);
+    } else if (editor === "notepadcc") {
+      await createNote(NOTEPADCC_BASE, newTab);
     } else {
       await createEditorNote(editor);
     }
   }
 
-  async function createNote(newTab) {
+  async function createNote(base, newTab) {
     const slug = makeSlug();
-    const url = `${NOTEPAD_BASE}${slug}`;
+    const url = `${base}${slug}`;
     notes.unshift({
       id: slug,
       type: "notepad",
@@ -279,15 +292,25 @@
     return Boolean(note.type) && note.type !== "notepad";
   }
 
-  // notepad.pw notes open in the same tab (per request). Editor notes are
-  // extension pages, which a web page cannot navigate to in place, so they
-  // open in a new tab.
+  function noteUrl(note) {
+    return isEditorNote(note)
+      ? chrome.runtime.getURL(`src/note-editor.html?id=${encodeURIComponent(note.id)}`)
+      : note.url;
+  }
+
+  // Notes open in the SAME tab by default. The only exception: a web page
+  // (notepad.pw) cannot navigate in place to an extension page, so editor
+  // notes fall back to a new tab there. On the extension's own note-editor
+  // pages, everything (including editor notes) navigates in the same tab.
   function openNote(note, newTab) {
-    if (isEditorNote(note)) {
-      window.open(chrome.runtime.getURL(`src/note-editor.html?id=${encodeURIComponent(note.id)}`), "_blank", "noopener");
+    const url = noteUrl(note);
+    if (!url) return;
+    const onExtensionPage = location.protocol === "chrome-extension:";
+    if (newTab || (isEditorNote(note) && !onExtensionPage)) {
+      window.open(url, "_blank", "noopener");
       return;
     }
-    navigate(note.url, newTab);
+    window.location.assign(url);
   }
 
   async function deleteNote(id) {
@@ -469,6 +492,10 @@
       event.dataTransfer.setData("text/plain", note.id);
     });
 
+    const icon = document.createElement("span");
+    icon.className = "item__icon";
+    icon.innerHTML = noteIcon(note);
+
     const body = document.createElement("div");
     body.className = "item__body";
     body.setAttribute("role", "button");
@@ -505,6 +532,17 @@
       beginRename(li, body, title, note);
     });
 
+    const openNew = document.createElement("button");
+    openNew.className = "item__newtab";
+    openNew.type = "button";
+    openNew.title = "Open in new tab";
+    openNew.setAttribute("aria-label", "Open in new tab");
+    openNew.textContent = "↗";
+    openNew.addEventListener("click", (event) => {
+      event.stopPropagation();
+      openNote(note, true);
+    });
+
     const del = document.createElement("button");
     del.className = "item__delete";
     del.type = "button";
@@ -516,8 +554,16 @@
       deleteNote(note.id);
     });
 
-    li.append(body, edit, del);
+    li.append(icon, body, edit, openNew, del);
     return li;
+  }
+
+  // Per-type icon (HTML) shown against each note.
+  function noteIcon(note) {
+    if (isEditorNote(note)) {
+      return { tinymce: "✍️", tiptap: "⚡", plain: "📝", native: "📄" }[note.type] || "📄";
+    }
+    return (note.url || "").includes("notepad.cc") ? CC_ICON : PW_ICON;
   }
 
   function beginRename(li, body, title, note) {
@@ -533,14 +579,12 @@
     input.select();
 
     let done = false;
-    const commit = async (save) => {
+    const commit = async (persist) => {
       if (done) return;
       done = true;
-      if (save) {
+      if (persist) {
         const value = input.value.trim();
-        if (value) {
-          await renameNote(note.id, value);
-        }
+        if (value) await renameNote(note.id, value);
       }
       renderList();
     };
@@ -866,6 +910,11 @@
         background: #ffffff; border: 1px solid #e2e7eb; border-radius: 10px;
         padding: 9px 10px;
       }
+      .item__icon {
+        flex-shrink: 0; width: 22px; height: 22px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 15px; line-height: 1;
+      }
       .item:hover { border-color: #cfd6db; }
       .item--active { border-color: #0d9276; box-shadow: 0 0 0 2px rgba(13, 146, 118, 0.16); }
       .item__body { flex: 1; min-width: 0; cursor: pointer; }
@@ -878,12 +927,25 @@
         overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
       }
       .item__edit,
+      .item__newtab,
       .item__delete {
         flex-shrink: 0; width: 26px; height: 26px; border: 0; border-radius: 7px;
-        background: #f1f4f6; color: #6b7580; font-size: 14px; line-height: 1; cursor: pointer;
+        background: #f1f4f6; color: #6b7580; font-size: 15px; line-height: 1; cursor: pointer;
+        opacity: 0; transition: opacity 120ms ease;
       }
+      /* Reveal the action icons only when hovering or keyboard-focusing a row. */
+      .item:hover .item__edit,
+      .item:hover .item__newtab,
+      .item:hover .item__delete,
+      .item:focus-within .item__edit,
+      .item:focus-within .item__newtab,
+      .item:focus-within .item__delete {
+        opacity: 1;
+      }
+      .item__newtab { font-weight: 700; }
+      .item__edit { font-size: 14px; }
       .item__edit:hover { background: #e4f1ec; color: #0d9276; }
-      .item__delete { font-size: 15px; }
+      .item__newtab:hover { background: #e4f1ec; color: #0d9276; }
       .item__delete:hover { background: #fbe4e4; color: #c0392b; }
       .item__rename {
         flex: 1; min-width: 0; width: 100%;

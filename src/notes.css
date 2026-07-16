@@ -39,15 +39,10 @@ a {
 }
 
 .notes__logo {
-  align-items: center;
-  background: #ffffff;
-  border: 1px solid #e2e7eb;
-  border-radius: 10px;
-  display: inline-flex;
-  font-size: 20px;
   height: 40px;
-  justify-content: center;
   width: 40px;
+  object-fit: contain;
+  display: block;
 }
 
 h1 {
@@ -150,6 +145,17 @@ p {
 .note-item:hover {
   border-color: #cfd6db;
   box-shadow: 0 4px 12px rgb(25 32 38 / 6%);
+}
+
+.note-item__icon {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  line-height: 1;
 }
 
 .note-item__body {

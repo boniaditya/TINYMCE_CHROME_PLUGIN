@@ -10,10 +10,10 @@
     <main class="notes">
       <header class="notes__header">
         <div class="notes__brand">
-          <span class="notes__logo" aria-hidden="true">📝</span>
+          <img class="notes__logo" src="../icons/icon-128.png" alt="" width="40" height="40">
           <div>
             <h1>Notes</h1>
-            <p id="subtitle">Quick notepad.pw scratchpads</p>
+            <p id="subtitle">notepad.pw &amp; rich-text notes</p>
           </div>
         </div>
       </header>
@@ -37,10 +37,6 @@
           <p class="empty__hint">Click <strong>New Note</strong> to open a fresh notepad.pw page.</p>
         </div>
       </section>
-
-      <footer class="notes__footer">
-        <a id="openEditor" href="#" class="link-button">Open Page Editor</a>
-      </footer>
     </main>
 
     <div id="editorModal" class="modal" hidden>
@@ -53,10 +49,9 @@
         <p class="modal__sub">Where do you want to write?</p>
         <div class="modal__options">
           <button class="opt" type="button" data-editor="notepad"><span class="opt__icon">🌐</span><span class="opt__text"><span class="opt__title">notepad.pw</span><span class="opt__desc">Open a fresh online notepad page</span></span></button>
+          <button class="opt" type="button" data-editor="notepadcc"><span class="opt__icon">🗒️</span><span class="opt__text"><span class="opt__title">notepad.cc</span><span class="opt__desc">Open a fresh notepad.cc page</span></span></button>
           <button class="opt" type="button" data-editor="tinymce"><span class="opt__icon">✍️</span><span class="opt__text"><span class="opt__title">TinyMCE</span><span class="opt__desc">Rich text editor with a toolbar</span></span></button>
-          <button class="opt" type="button" data-editor="ckeditor"><span class="opt__icon">📄</span><span class="opt__text"><span class="opt__title">CKEditor</span><span class="opt__desc">Rich text editor with a toolbar</span></span></button>
           <button class="opt" type="button" data-editor="tiptap"><span class="opt__icon">⚡</span><span class="opt__text"><span class="opt__title">Tiptap</span><span class="opt__desc">Minimal keyboard-first editor</span></span></button>
-          <button class="opt" type="button" data-editor="jck"><span class="opt__icon">🧱</span><span class="opt__text"><span class="opt__title">JCK</span><span class="opt__desc">JCK Editor (CKEditor-based)</span></span></button>
           <button class="opt" type="button" data-editor="plain"><span class="opt__icon">📝</span><span class="opt__text"><span class="opt__title">Plain Text</span><span class="opt__desc">A simple distraction-free notepad</span></span></button>
         </div>
       </div>

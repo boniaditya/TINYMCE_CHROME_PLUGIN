@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <!-- no background; green artwork on transparent -->
+
+  <!-- notepad body (green outline) -->
+  <rect x="70" y="118" width="372" height="332" rx="46" fill="none" stroke="#0d9276" stroke-width="26"/>
+
+  <!-- spiral bindings -->
+  <g fill="#0d9276">
+    <rect x="150" y="86" width="26" height="62" rx="13"/>
+    <rect x="243" y="86" width="26" height="62" rx="13"/>
+    <rect x="336" y="86" width="26" height="62" rx="13"/>
+  </g>
+
+  <!-- folder (root of the thread) -->
+  <path d="M126 196 h44 l16 18 h40 a14 14 0 0 1 14 14 v52 a14 14 0 0 1 -14 14 h-100 a14 14 0 0 1 -14 -14 v-70 a14 14 0 0 1 14 -14 z" fill="#0d9276"/>
+
+  <!-- threaded / nested connectors -->
+  <g fill="#0d9276">
+    <rect x="150" y="306" width="8" height="130" rx="4"/>
+    <rect x="214" y="366" width="8" height="70" rx="4"/>
+    <rect x="150" y="336" width="40" height="8" rx="4"/>
+    <rect x="150" y="398" width="24" height="8" rx="4"/>
+    <rect x="214" y="398" width="40" height="8" rx="4"/>
+  </g>
+
+  <!-- note leaves (lighter green) -->
+  <g fill="#67c9b1">
+    <rect x="196" y="328" width="150" height="24" rx="12"/>
+    <rect x="180" y="390" width="26" height="24" rx="12"/>
+    <rect x="260" y="390" width="106" height="24" rx="12"/>
+  </g>
+</svg>
