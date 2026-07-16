@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Note</title>
+    <link rel="stylesheet" href="note-editor.css">
+  </head>
+  <body>
+    <main class="note">
+      <header class="note__bar">
+        <input id="noteTitle" class="note__title" type="text" placeholder="Untitled note" spellcheck="false">
+        <span id="editorBadge" class="note__badge"></span>
+        <span id="saveState" class="note__save">Saved</span>
+      </header>
+
+      <div id="editorHost" class="note__host">
+        <div id="richEditor" class="note__rich" contenteditable="true" spellcheck="true"></div>
+        <textarea id="plainEditor" class="note__plain" spellcheck="true" hidden></textarea>
+      </div>
+
+      <p id="editorError" class="note__error" hidden></p>
+    </main>
+    <script src="notepad-sidebar.js"></script>
+    <script src="note-editor.js"></script>
+  </body>
+</html>

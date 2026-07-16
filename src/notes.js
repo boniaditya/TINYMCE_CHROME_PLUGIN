@@ -1,5 +1,13 @@
 const STORAGE_KEY = "notepadHistory";
 const NOTEPAD_BASE = "https://notepad.pw/";
+const EDITOR_LABELS = {
+  tinymce: "TinyMCE",
+  ckeditor: "CKEditor",
+  tiptap: "Tiptap",
+  jck: "JCK",
+  plain: "Plain Text",
+  native: "Rich Text"
+};
 
 const newNoteButton = document.querySelector("#newNoteButton");
 const clearAllButton = document.querySelector("#clearAllButton");
@@ -7,20 +15,43 @@ const noteList = document.querySelector("#noteList");
 const emptyState = document.querySelector("#emptyState");
 const listTitle = document.querySelector("#listTitle");
 const openEditor = document.querySelector("#openEditor");
+const editorModal = document.querySelector("#editorModal");
 
 init();
 
 async function init() {
-  await render();
-  newNoteButton.addEventListener("click", createNote);
+  // Wire controls first so a rendering hiccup can never leave buttons dead.
+  newNoteButton.addEventListener("click", () => { editorModal.hidden = false; });
   clearAllButton.addEventListener("click", clearAll);
   openEditor.addEventListener("click", (event) => {
     event.preventDefault();
     chrome.tabs.create({ url: chrome.runtime.getURL("src/popup.html") });
   });
+
+  editorModal.addEventListener("click", (event) => {
+    if (event.target.closest("[data-close]")) {
+      editorModal.hidden = true;
+      return;
+    }
+    const option = event.target.closest("[data-editor]");
+    if (option) {
+      editorModal.hidden = true;
+      chooseEditor(option.dataset.editor);
+    }
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !editorModal.hidden) {
+      editorModal.hidden = true;
+    }
+  });
+
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area === "local" && changes[STORAGE_KEY]) render();
+  });
+
+  await render();
 }
 
-// A random, hard-to-collide slug so we open a fresh, private pad every time.
 function makeSlug() {
   const random = (crypto.randomUUID?.() ?? `${Date.now()}-${Math.random()}`)
     .replace(/-/g, "")
@@ -30,36 +61,53 @@ function makeSlug() {
 
 async function getNotes() {
   const data = await chrome.storage.local.get(STORAGE_KEY);
-  const notes = data[STORAGE_KEY];
-  return Array.isArray(notes) ? notes : [];
+  return Array.isArray(data[STORAGE_KEY]) ? data[STORAGE_KEY] : [];
 }
 
 async function saveNotes(notes) {
   await chrome.storage.local.set({ [STORAGE_KEY]: notes });
 }
 
-async function createNote() {
-  newNoteButton.disabled = true;
-  const slug = makeSlug();
-  const url = `${NOTEPAD_BASE}${slug}`;
-  const note = {
-    id: slug,
-    url,
-    title: formatTitle(new Date()),
-    createdAt: Date.now()
-  };
-
-  const notes = await getNotes();
-  notes.unshift(note);
-  await saveNotes(notes);
-
-  await chrome.tabs.create({ url, active: true });
-  await render();
-  newNoteButton.disabled = false;
+async function chooseEditor(editor) {
+  if (editor === "notepad") {
+    await createNotepadNote();
+  } else {
+    await createEditorNote(editor);
+  }
 }
 
-async function openNote(url) {
+async function createNotepadNote() {
+  const slug = makeSlug();
+  const url = `${NOTEPAD_BASE}${slug}`;
+  const notes = await getNotes();
+  notes.unshift({ id: slug, type: "notepad", url, title: formatTitle(new Date()), createdAt: Date.now() });
+  await saveNotes(notes);
   await chrome.tabs.create({ url, active: true });
+  await render();
+}
+
+async function createEditorNote(editor) {
+  const id = makeSlug();
+  const label = EDITOR_LABELS[editor] || "Note";
+  const notes = await getNotes();
+  notes.unshift({ id, type: editor, title: `${label} note`, content: "", createdAt: Date.now() });
+  await saveNotes(notes);
+  await chrome.tabs.create({
+    url: chrome.runtime.getURL(`src/note-editor.html?id=${encodeURIComponent(id)}`),
+    active: true
+  });
+  await render();
+}
+
+function isEditorNote(note) {
+  return Boolean(note.type) && note.type !== "notepad";
+}
+
+function openNote(note) {
+  const url = isEditorNote(note)
+    ? chrome.runtime.getURL(`src/note-editor.html?id=${encodeURIComponent(note.id)}`)
+    : note.url;
+  if (url) chrome.tabs.create({ url, active: true });
 }
 
 async function deleteNote(id) {
@@ -82,10 +130,6 @@ function formatTitle(date) {
   });
 }
 
-function shortUrl(url) {
-  return url.replace(/^https?:\/\//, "");
-}
-
 async function render() {
   const notes = await getNotes();
   noteList.innerHTML = "";
@@ -93,9 +137,7 @@ async function render() {
   const hasNotes = notes.length > 0;
   emptyState.hidden = hasNotes;
   clearAllButton.hidden = !hasNotes;
-  listTitle.textContent = hasNotes
-    ? `Recent notes (${notes.length})`
-    : "Recent notes";
+  listTitle.textContent = hasNotes ? `Recent notes (${notes.length})` : "Recent notes";
 
   for (const note of notes) {
     noteList.appendChild(renderNote(note));
@@ -113,18 +155,20 @@ function renderNote(note) {
 
   const title = document.createElement("div");
   title.className = "note-item__title";
-  title.textContent = note.title;
+  title.textContent = note.title || "Untitled note";
 
   const meta = document.createElement("div");
   meta.className = "note-item__meta";
-  meta.textContent = shortUrl(note.url);
+  meta.textContent = isEditorNote(note)
+    ? `${EDITOR_LABELS[note.type] || "Editor"} note`
+    : (note.url || "").replace(/^https?:\/\//, "");
 
   body.append(title, meta);
-  body.addEventListener("click", () => openNote(note.url));
+  body.addEventListener("click", () => openNote(note));
   body.addEventListener("keydown", (event) => {
     if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
-      openNote(note.url);
+      openNote(note);
     }
   });
 

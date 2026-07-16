@@ -29,12 +29,24 @@
       ],
       "run_at": "document_idle",
       "all_frames": false
+    },
+    {
+      "matches": [
+        "https://notepad.pw/*",
+        "http://notepad.pw/*"
+      ],
+      "js": [
+        "src/notepad-sidebar.js"
+      ],
+      "run_at": "document_idle",
+      "all_frames": false
     }
   ],
   "web_accessible_resources": [
     {
       "resources": [
         "src/page-editor-bridge.js",
+        "src/note-editor.html",
         "vendor/tinymce/*",
         "vendor/tinymce/*/*",
         "vendor/tinymce/*/*/*",

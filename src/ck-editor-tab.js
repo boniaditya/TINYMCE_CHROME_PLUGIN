@@ -79,14 +79,25 @@ function startCkEditor4() {
   state.editorType = "ckeditor4";
   nativeEditor.style.display = "none";
   htmlSource.style.display = "block";
-  htmlSource.value = state.snapshot.fullHtml || composeFullHtml(state.snapshot.bodyHtml || "");
+  // divarea edits body content only; the full document (doctype/head) is kept
+  // in the snapshot and reassembled by composeFullHtml, same as the CKEditor 5
+  // path. Seed the editor with just the body HTML.
+  const bodyHtml = state.snapshot.bodyHtml || extractBodyHtml(state.snapshot.fullHtml || "");
+  htmlSource.value = bodyHtml;
 
   state.ckInstance = window.CKEDITOR.replace(htmlSource, {
     allowedContent: true,
-    fullPage: true,
     height: Math.max(520, window.innerHeight - 190),
     extraAllowedContent: "*(*);*{*}",
-    removePlugins: "elementspath",
+    // Edit inside a <div> instead of an <iframe>. CKEditor 4's iframe editing
+    // area bootstraps with an inline <script>, which the extension page's
+    // Content Security Policy (script-src 'self') blocks. divarea avoids it.
+    extraPlugins: "divarea",
+    // Silence the built-in "this version is not secure" console nag.
+    versionCheck: false,
+    // exportpdf ships in this build but needs a cloud token URL we don't have,
+    // which throws exportpdf-no-token-url on load. We don't offer PDF export.
+    removePlugins: "elementspath,exportpdf",
     toolbar: [
       { name: "document", items: ["Source", "-", "Preview", "Print"] },
       { name: "clipboard", items: ["Undo", "Redo"] },
@@ -142,12 +153,11 @@ function loadCkEditor() {
 function toggleSourceMode() {
   if (state.sourceMode) {
     const sourceHtml = htmlSource.value;
-    if (state.editorType === "ckeditor4" && state.ckInstance) {
-      state.ckInstance.setData(sourceHtml);
-    } else if (state.editorType === "ckeditor5" && state.ckInstance) {
-      state.ckInstance.setData(extractBodyHtml(sourceHtml));
+    const bodyHtml = extractBodyHtml(sourceHtml);
+    if ((state.editorType === "ckeditor4" || state.editorType === "ckeditor5") && state.ckInstance) {
+      state.ckInstance.setData(bodyHtml);
     } else {
-      nativeEditor.innerHTML = extractBodyHtml(sourceHtml);
+      nativeEditor.innerHTML = bodyHtml;
     }
     document.body.classList.remove("is-source");
     sourceButton.textContent = "Source";
@@ -167,13 +177,8 @@ function getCurrentFullHtml() {
     return htmlSource.value;
   }
 
-  if (state.editorType === "ckeditor4" && state.ckInstance) {
-    return state.ckInstance.getData();
-  }
-
-  const bodyHtml = state.editorType === "ckeditor5" && state.ckInstance
-    ? state.ckInstance.getData()
-    : nativeEditor.innerHTML;
+  const usingCkInstance = (state.editorType === "ckeditor4" || state.editorType === "ckeditor5") && state.ckInstance;
+  const bodyHtml = usingCkInstance ? state.ckInstance.getData() : nativeEditor.innerHTML;
   return composeFullHtml(bodyHtml);
 }
 

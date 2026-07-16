@@ -5,11 +5,29 @@ const DEFAULT_SETTINGS = {
   sanitizeHtml: true
 };
 
+// Editor types that have been removed from the extension. Notes created with
+// them are purged from history so they never appear again.
+const PURGED_NOTE_TYPES = ["aloha", "jce"];
+
 chrome.runtime.onInstalled.addListener(() => {
   chrome.storage.sync.get(DEFAULT_SETTINGS, (settings) => {
     chrome.storage.sync.set({ ...DEFAULT_SETTINGS, ...settings });
   });
+  purgeRemovedEditorNotes();
 });
+
+chrome.runtime.onStartup.addListener(purgeRemovedEditorNotes);
+
+async function purgeRemovedEditorNotes() {
+  const { notepadHistory } = await chrome.storage.local.get("notepadHistory");
+  if (!Array.isArray(notepadHistory)) {
+    return;
+  }
+  const cleaned = notepadHistory.filter((note) => !PURGED_NOTE_TYPES.includes(note?.type));
+  if (cleaned.length !== notepadHistory.length) {
+    await chrome.storage.local.set({ notepadHistory: cleaned });
+  }
+}
 
 chrome.commands.onCommand.addListener((command) => {
   if (command !== "toggle-editor") {

@@ -15,6 +15,24 @@ const clearDraftsButton = document.querySelector("#clearDraftsButton");
 const statusText = document.querySelector("#statusText");
 const stateDot = document.querySelector("#stateDot");
 
+const newNoteButton = document.querySelector("#newNoteButton");
+const notesClearAll = document.querySelector("#notesClearAll");
+const noteList = document.querySelector("#noteList");
+const notesEmpty = document.querySelector("#notesEmpty");
+const notesTitle = document.querySelector("#notesTitle");
+const editorModal = document.querySelector("#editorModal");
+
+const NOTES_KEY = "notepadHistory";
+const NOTEPAD_BASE = "https://notepad.pw/";
+const EDITOR_LABELS = {
+  tinymce: "TinyMCE",
+  ckeditor: "CKEditor",
+  tiptap: "Tiptap",
+  jck: "JCK",
+  plain: "Plain Text",
+  native: "Rich Text"
+};
+
 let active = false;
 let activeTabId = null;
 
@@ -35,6 +53,178 @@ async function init() {
   toggleButton.addEventListener("click", toggleEditor);
   openCkPageButton.addEventListener("click", openFullPageCkEditor);
   clearDraftsButton.addEventListener("click", clearDrafts);
+
+  await initNotes();
+}
+
+async function initNotes() {
+  newNoteButton.addEventListener("click", openEditorModal);
+  notesClearAll.addEventListener("click", clearAllNotes);
+
+  editorModal.addEventListener("click", (event) => {
+    if (event.target.closest("[data-close]")) {
+      closeEditorModal();
+      return;
+    }
+    const option = event.target.closest("[data-editor]");
+    if (option) {
+      chooseEditor(option.dataset.editor);
+    }
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !editorModal.hidden) {
+      closeEditorModal();
+    }
+  });
+
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area === "local" && changes[NOTES_KEY]) {
+      renderNotes();
+    }
+  });
+  await renderNotes();
+}
+
+function openEditorModal() {
+  editorModal.hidden = false;
+}
+
+function closeEditorModal() {
+  editorModal.hidden = true;
+}
+
+async function chooseEditor(editor) {
+  closeEditorModal();
+  if (editor === "notepad") {
+    await createNotepadNote();
+  } else {
+    await createEditorNote(editor);
+  }
+}
+
+function makeNoteSlug() {
+  const random = (crypto.randomUUID?.() ?? `${Date.now()}-${Math.random()}`)
+    .replace(/-/g, "")
+    .slice(0, 12);
+  return `note-${random}`;
+}
+
+async function getNotes() {
+  const data = await chrome.storage.local.get(NOTES_KEY);
+  return Array.isArray(data[NOTES_KEY]) ? data[NOTES_KEY] : [];
+}
+
+async function createNotepadNote() {
+  const slug = makeNoteSlug();
+  const url = `${NOTEPAD_BASE}${slug}`;
+  const notes = await getNotes();
+  notes.unshift({ id: slug, type: "notepad", url, title: formatNoteTitle(new Date()), createdAt: Date.now() });
+  await chrome.storage.local.set({ [NOTES_KEY]: notes });
+  await chrome.tabs.create({ url, active: true });
+  await renderNotes();
+}
+
+async function createEditorNote(editor) {
+  const id = makeNoteSlug();
+  const label = EDITOR_LABELS[editor] || "Note";
+  const notes = await getNotes();
+  notes.unshift({
+    id,
+    type: editor,
+    title: `${label} note`,
+    content: "",
+    createdAt: Date.now()
+  });
+  await chrome.storage.local.set({ [NOTES_KEY]: notes });
+  await chrome.tabs.create({
+    url: chrome.runtime.getURL(`src/note-editor.html?id=${encodeURIComponent(id)}`),
+    active: true
+  });
+  await renderNotes();
+}
+
+function openNoteTarget(note) {
+  const url = note.type && note.type !== "notepad"
+    ? chrome.runtime.getURL(`src/note-editor.html?id=${encodeURIComponent(note.id)}`)
+    : note.url;
+  chrome.tabs.create({ url, active: true });
+}
+
+async function deleteNote(id) {
+  const notes = await getNotes();
+  await chrome.storage.local.set({ [NOTES_KEY]: notes.filter((note) => note.id !== id) });
+  await renderNotes();
+}
+
+async function clearAllNotes() {
+  await chrome.storage.local.set({ [NOTES_KEY]: [] });
+  await renderNotes();
+}
+
+function formatNoteTitle(date) {
+  return date.toLocaleString(undefined, {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit"
+  });
+}
+
+async function renderNotes() {
+  const notes = await getNotes();
+  noteList.innerHTML = "";
+  const hasNotes = notes.length > 0;
+  notesEmpty.hidden = hasNotes;
+  notesClearAll.hidden = !hasNotes;
+  notesTitle.textContent = hasNotes ? `Notes (${notes.length})` : "Notes";
+
+  for (const note of notes) {
+    noteList.appendChild(renderNoteItem(note));
+  }
+}
+
+function renderNoteItem(note) {
+  const item = document.createElement("li");
+  item.className = "note-item";
+
+  const body = document.createElement("div");
+  body.className = "note-item__body";
+  body.setAttribute("role", "button");
+  body.tabIndex = 0;
+
+  const title = document.createElement("div");
+  title.className = "note-item__title";
+  title.textContent = note.title;
+
+  const meta = document.createElement("p");
+  meta.className = "note-item__meta";
+  meta.textContent = note.type && note.type !== "notepad"
+    ? `${EDITOR_LABELS[note.type] || "Editor"} note`
+    : (note.url || "").replace(/^https?:\/\//, "");
+
+  body.append(title, meta);
+  const open = () => openNoteTarget(note);
+  body.addEventListener("click", open);
+  body.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      open();
+    }
+  });
+
+  const del = document.createElement("button");
+  del.className = "note-item__delete";
+  del.type = "button";
+  del.title = "Delete note";
+  del.setAttribute("aria-label", "Delete note");
+  del.textContent = "×";
+  del.addEventListener("click", (event) => {
+    event.stopPropagation();
+    deleteNote(note.id);
+  });
+
+  item.append(body, del);
+  return item;
 }
 
 function applySettings(settings) {
