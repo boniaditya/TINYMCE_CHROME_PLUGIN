@@ -1,20 +1,17 @@
-# Page Studio Inline Editor
+# Notepad Library
 
-A Manifest V3 Chrome extension that lets you select webpage elements and edit them directly in-place.
+A Manifest V3 Chrome extension for keeping a threaded library of local notes, online notepads, and directly opened notepad links.
 
 ## Features
 
-- Toggle direct editing from the extension popup or `Alt+Shift+E`.
-- Click any visible element to edit that element directly on the page.
-- The editor toolbar appears over the element being edited and follows it while scrolling or resizing.
-- Click **Edit Full Page in CKEditor** to capture the active website and open it in a new CKEditor workspace tab.
-- From the CKEditor workspace, copy/download the edited HTML or apply it back to the original tab.
-- Choose Native Inline, TinyMCE Inline, Tiptap Inline, CKEditor Inline, Aloha Editor, HTML Source, Plain Text, or Whole Page modes.
-- Use `Esc` to cancel an inline edit and `Cmd/Ctrl+S` to commit it.
-- Edit images directly with resize handles, paste/drop replacement, or `Enter` to upload a local image.
-- Apply edits to the current page without changing the original site.
-- Autosave drafts per page and element.
-- Optional element outlines and HTML sanitization.
+- Open and organize notepad.pw and notepad.cc pages from the extension.
+- Create local notepads with TinyMCE, Tiptap, Milkdown WYSIWYG Markdown, Markdown source/preview, or plain text editors.
+- Autofill or append editor-specific randomized Lorem Ipsum sample text to the open local note.
+- Export the open local note as Markdown, HTML, plain text, or JSON.
+- Group notes into threaded folders from the sidebar.
+- Review directly opened notepad.pw and notepad.cc links in a bottom-docked History folder.
+- Open historical links from the sidebar into the current page, with a separate new-tab control.
+- Keep recent notes available from the popup and supported online notepad pages.
 
 ## Install locally
 
@@ -25,6 +22,8 @@ A Manifest V3 Chrome extension that lets you select webpage elements and edit th
 
 ## Notes
 
-CKEditor is bundled locally at `vendor/ckeditor/ckeditor.js`, so the full-page CKEditor tab works without a remote CDN. TinyMCE is bundled at `vendor/tinymce/tinymce.min.js`, and Tiptap is bundled at `vendor/tiptap/tiptap.umd.js`. Aloha runs as a true inline editor when its browser bundle is present in `vendor/`. See `vendor/README.md` for expected paths. Chrome extensions should not use remotely hosted editor code for store-ready Manifest V3 packages, so editor assets should be bundled locally.
+TinyMCE is bundled at `vendor/tinymce/tinymce.min.js`, Tiptap is bundled at `vendor/tiptap/tiptap.umd.js`, and Milkdown Crepe is bundled at `vendor/milkdown/milkdown.js`. See `vendor/README.md` for expected paths. Chrome extensions should not use remotely hosted editor code for store-ready Manifest V3 packages, so editor assets should be bundled locally.
 
-Edits are local to the current browser tab. Reloading the page restores the original site unless the page itself saves DOM changes.
+Local notes are stored in Chrome extension storage. Online notepads open on their source websites.
+
+Bugfixes and small updates should stay on the current `7.x` line, such as `7.0.1` or `7.1.0`. Only major feature releases should move to the next major `.0.0` version.

@@ -11,12 +11,28 @@
       <header class="note__bar">
         <input id="noteTitle" class="note__title" type="text" placeholder="Untitled note" spellcheck="false">
         <span id="editorBadge" class="note__badge"></span>
+        <button id="loremButton" class="note__lorem-button" type="button" title="Fill note with Lorem Ipsum sample text">Lorem Ipsum</button>
+        <div class="note__export">
+          <button id="exportButton" class="note__export-button" type="button" aria-expanded="false" aria-haspopup="menu">Export</button>
+          <div id="exportMenu" class="note__export-menu" role="menu" hidden>
+            <button type="button" role="menuitem" data-export-format="markdown">Markdown (.md)</button>
+            <button type="button" role="menuitem" data-export-format="html">HTML (.html)</button>
+            <button type="button" role="menuitem" data-export-format="text">Plain text (.txt)</button>
+            <button type="button" role="menuitem" data-export-format="json">JSON (.json)</button>
+          </div>
+        </div>
         <span id="saveState" class="note__save">Saved</span>
       </header>
 
       <div id="editorHost" class="note__host">
+        <div id="toolbarHost" class="note__toolbar-host" hidden></div>
         <div id="richEditor" class="note__rich" contenteditable="true" spellcheck="true"></div>
         <textarea id="plainEditor" class="note__plain" spellcheck="true" hidden></textarea>
+        <div id="milkdownEditor" class="note__milkdown" hidden></div>
+        <div id="markdownEditor" class="note__markdown" hidden>
+          <textarea id="markdownSource" class="note__markdown-source" spellcheck="true" placeholder="# Untitled&#10;&#10;Start writing in Markdown..."></textarea>
+          <article id="markdownPreview" class="note__markdown-preview" aria-label="Markdown preview"></article>
+        </div>
       </div>
 
       <p id="editorError" class="note__error" hidden></p>

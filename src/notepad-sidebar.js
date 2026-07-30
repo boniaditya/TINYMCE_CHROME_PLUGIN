@@ -1,11 +1,14 @@
 (() => {
   const STORAGE_KEY = "notepadHistory";
+  const LINK_HISTORY_KEY = "notepadLinkHistory";
   const COLLAPSE_KEY = "notepadSidebarCollapsed";
+  const HISTORY_COLLAPSE_KEY = "notepadLinkHistoryCollapsed";
   const FOLDERS_KEY = "notepadFolders";
   const NOTEPAD_BASE = "https://notepad.pw/";
   const NOTEPADCC_BASE = "https://notepad.cc/";
   const HOST_ID = "page-studio-notepad-sidebar";
   const WIDTH_KEY = "notepadSidebarWidth";
+  const EXTENSION_RECONNECT_MESSAGE = "Notepad Library was updated. Reload this page to reconnect the sidebar.";
   const DEFAULT_WIDTH = 280;
   const MIN_WIDTH = 220;
   const MAX_WIDTH = 520;
@@ -13,6 +16,8 @@
   const EDITOR_LABELS = {
     tinymce: "TinyMCE",
     tiptap: "Tiptap",
+    milkdown: "Milkdown",
+    markdown: "Markdown",
     plain: "Plain Text",
     native: "Rich Text"
   };
@@ -28,9 +33,13 @@
   }
 
   let collapsed = false;
+  let historyCollapsed = false;
   let notes = [];
   let folders = [];
+  let linkHistory = [];
   let draggedRef = null;
+  let noticeTimer = 0;
+  let extensionUnavailableShown = false;
 
   const host = document.createElement("div");
   host.id = HOST_ID;
@@ -45,11 +54,12 @@
         <header class="head">
           <div class="brand">
             <span class="logo">📝</span>
-            <strong>Notes</strong>
+            <strong>Notepad Library</strong>
           </div>
           <button class="collapse" type="button" title="Hide sidebar" aria-label="Hide sidebar">‹</button>
         </header>
         <button class="new-note" type="button">+ New Note</button>
+        <div class="notice" role="status" hidden></div>
         <div class="list-head">
           <span class="list-title">Recent notes</span>
           <div class="list-actions">
@@ -59,6 +69,19 @@
         </div>
         <ul class="items"></ul>
         <div class="empty" hidden>No notes saved yet.</div>
+        <section class="history" data-collapsed="false" aria-label="Direct link history">
+          <div class="history__head">
+            <button class="history__toggle" type="button" aria-expanded="true">
+              <span class="history__chevron">▾</span>
+              <span class="history__icon">📁</span>
+              <span class="history__title">History</span>
+              <span class="history__count">0</span>
+            </button>
+            <button class="history__clear" type="button" hidden>Clear</button>
+          </div>
+          <ul class="history__items"></ul>
+          <div class="history__empty">Directly opened notepad.pw or notepad.cc links will appear here.</div>
+        </section>
       </aside>
       <div class="resizer" title="Drag to resize"></div>
 
@@ -75,6 +98,8 @@
             <button class="opt" type="button" data-editor="notepadcc"><span class="opt__icon">🗒️</span><span class="opt__text"><span class="opt__title">notepad.cc</span><span class="opt__desc">Open a fresh notepad.cc page</span></span></button>
             <button class="opt" type="button" data-editor="tinymce"><span class="opt__icon">✍️</span><span class="opt__text"><span class="opt__title">TinyMCE</span><span class="opt__desc">Rich text editor with a toolbar</span></span></button>
             <button class="opt" type="button" data-editor="tiptap"><span class="opt__icon">⚡</span><span class="opt__text"><span class="opt__title">Tiptap</span><span class="opt__desc">Minimal keyboard-first editor</span></span></button>
+            <button class="opt" type="button" data-editor="milkdown"><span class="opt__icon">W</span><span class="opt__text"><span class="opt__title">Milkdown</span><span class="opt__desc">WYSIWYG Markdown editor</span></span></button>
+            <button class="opt" type="button" data-editor="markdown"><span class="opt__icon">MD</span><span class="opt__text"><span class="opt__title">Markdown</span><span class="opt__desc">Write with source and preview panes</span></span></button>
             <button class="opt" type="button" data-editor="plain"><span class="opt__icon">📝</span><span class="opt__text"><span class="opt__title">Plain Text</span><span class="opt__desc">A simple distraction-free notepad</span></span></button>
           </div>
         </div>
@@ -87,10 +112,18 @@
   const collapseButton = shadow.querySelector(".collapse");
   const newNoteButton = shadow.querySelector(".new-note");
   const clearButton = shadow.querySelector(".clear");
+  const notice = shadow.querySelector(".notice");
   const items = shadow.querySelector(".items");
   const listTitle = shadow.querySelector(".list-title");
   const emptyState = shadow.querySelector(".empty");
   const resizer = shadow.querySelector(".resizer");
+  const historySection = shadow.querySelector(".history");
+  const historyToggle = shadow.querySelector(".history__toggle");
+  const historyChevron = shadow.querySelector(".history__chevron");
+  const historyCount = shadow.querySelector(".history__count");
+  const historyClear = shadow.querySelector(".history__clear");
+  const historyItems = shadow.querySelector(".history__items");
+  const historyEmpty = shadow.querySelector(".history__empty");
 
   const modal = shadow.querySelector(".modal");
   const newFolderButton = shadow.querySelector(".new-folder");
@@ -99,6 +132,8 @@
   collapseButton.addEventListener("click", () => setCollapsed(true));
   newNoteButton.addEventListener("click", () => { modal.hidden = false; });
   newFolderButton.addEventListener("click", createFolder);
+  historyToggle.addEventListener("click", () => setHistoryCollapsed(!historyCollapsed));
+  historyClear.addEventListener("click", clearLinkHistory);
   // Dropping onto the empty list area moves an item back to the root level.
   items.addEventListener("dragover", (event) => { event.preventDefault(); });
   items.addEventListener("drop", (event) => {
@@ -125,39 +160,67 @@
   resizer.addEventListener("mousedown", startResize);
   resizer.addEventListener("dblclick", () => setWidth(DEFAULT_WIDTH, true));
 
-  chrome.storage.onChanged.addListener((changes, area) => {
-    if (area !== "local") return;
-    if (changes[STORAGE_KEY]) {
-      notes = normalize(changes[STORAGE_KEY].newValue);
-      renderList();
+  const storageChanges = extensionStorageChanges();
+  if (storageChanges && typeof storageChanges.addListener === "function") {
+    try {
+      storageChanges.addListener((changes, area) => {
+        if (area !== "local") return;
+        if (changes[STORAGE_KEY]) {
+          notes = normalize(changes[STORAGE_KEY].newValue);
+          renderList();
+        }
+        if (changes[LINK_HISTORY_KEY]) {
+          linkHistory = normalizeLinkHistory(changes[LINK_HISTORY_KEY].newValue);
+          renderHistory();
+        }
+        if (changes[FOLDERS_KEY]) {
+          folders = normalize(changes[FOLDERS_KEY].newValue);
+          renderList();
+        }
+        if (changes[COLLAPSE_KEY]) {
+          applyCollapsed(Boolean(changes[COLLAPSE_KEY].newValue));
+        }
+        if (changes[HISTORY_COLLAPSE_KEY]) {
+          applyHistoryCollapsed(Boolean(changes[HISTORY_COLLAPSE_KEY].newValue));
+        }
+        if (changes[WIDTH_KEY] && !dragging) {
+          setWidth(Number(changes[WIDTH_KEY].newValue) || DEFAULT_WIDTH, false);
+        }
+      });
+    } catch (error) {
+      handleExtensionContextError(error);
     }
-    if (changes[FOLDERS_KEY]) {
-      folders = normalize(changes[FOLDERS_KEY].newValue);
-      renderList();
-    }
-    if (changes[COLLAPSE_KEY]) {
-      applyCollapsed(Boolean(changes[COLLAPSE_KEY].newValue));
-    }
-    if (changes[WIDTH_KEY] && !dragging) {
-      setWidth(Number(changes[WIDTH_KEY].newValue) || DEFAULT_WIDTH, false);
-    }
-  });
+  }
 
   boot();
 
   async function boot() {
     document.documentElement.appendChild(host);
-    const data = await chrome.storage.local.get([STORAGE_KEY, FOLDERS_KEY, COLLAPSE_KEY, WIDTH_KEY]);
+    const data = await getLocal([
+      STORAGE_KEY,
+      LINK_HISTORY_KEY,
+      FOLDERS_KEY,
+      COLLAPSE_KEY,
+      HISTORY_COLLAPSE_KEY,
+      WIDTH_KEY
+    ]);
     notes = normalize(data[STORAGE_KEY]);
+    const rawLinkHistory = normalize(data[LINK_HISTORY_KEY]);
+    linkHistory = normalizeLinkHistory(rawLinkHistory);
     folders = normalize(data[FOLDERS_KEY]);
     setWidth(clampWidth(Number(data[WIDTH_KEY]) || DEFAULT_WIDTH), false);
     applyCollapsed(Boolean(data[COLLAPSE_KEY]));
+    applyHistoryCollapsed(Boolean(data[HISTORY_COLLAPSE_KEY]));
     await captureCurrentNote();
+    if (linkHistory.length !== rawLinkHistory.length) {
+      await saveLinkHistory();
+    }
     renderList();
+    renderHistory();
   }
 
   function saveFolders() {
-    return chrome.storage.local.set({ [FOLDERS_KEY]: folders });
+    return setLocal({ [FOLDERS_KEY]: folders });
   }
 
   let dragging = false;
@@ -173,7 +236,7 @@
       document.documentElement.style.marginLeft = `${panelWidth}px`;
     }
     if (persist) {
-      chrome.storage.local.set({ [WIDTH_KEY]: panelWidth });
+      setLocal({ [WIDTH_KEY]: panelWidth });
     }
   }
 
@@ -190,7 +253,7 @@
       document.documentElement.style.transition = "margin-left 180ms ease";
       window.removeEventListener("mousemove", onMove);
       window.removeEventListener("mouseup", onUp);
-      chrome.storage.local.set({ [WIDTH_KEY]: panelWidth });
+      setLocal({ [WIDTH_KEY]: panelWidth });
     };
     window.addEventListener("mousemove", onMove);
     window.addEventListener("mouseup", onUp);
@@ -220,6 +283,10 @@
     if (location.hostname === "notepad.pw") return NOTEPAD_BASE;
     if (location.hostname === "notepad.cc") return NOTEPADCC_BASE;
     return "";
+  }
+
+  function isOnlineNotepadHost(hostname) {
+    return hostname === "notepad.pw" || hostname === "notepad.cc";
   }
 
   // The id of the note shown on the current page, so it can be highlighted.
@@ -277,7 +344,14 @@
     });
     await save();
     renderList();
-    window.open(chrome.runtime.getURL(`src/note-editor.html?id=${encodeURIComponent(id)}`), "_blank", "noopener");
+    const url = editorPageUrl(id);
+    if (!url) {
+      showNotice(extensionUnavailableShown
+        ? EXTENSION_RECONNECT_MESSAGE
+        : "Extension editor pages are unavailable here. Reload the page or extension, then try again.");
+      return;
+    }
+    window.open(url, "_blank", "noopener");
   }
 
   function navigate(url, newTab) {
@@ -294,7 +368,7 @@
 
   function noteUrl(note) {
     return isEditorNote(note)
-      ? chrome.runtime.getURL(`src/note-editor.html?id=${encodeURIComponent(note.id)}`)
+      ? editorPageUrl(note.id)
       : note.url;
   }
 
@@ -304,13 +378,99 @@
   // pages, everything (including editor notes) navigates in the same tab.
   function openNote(note, newTab) {
     const url = noteUrl(note);
-    if (!url) return;
+    if (!url) {
+      showNotice(isEditorNote(note)
+        ? (extensionUnavailableShown
+          ? EXTENSION_RECONNECT_MESSAGE
+          : "Extension editor pages are unavailable here. Reload the page or extension, then try again.")
+        : "This note does not have a saved link.");
+      return;
+    }
     const onExtensionPage = location.protocol === "chrome-extension:";
     if (newTab || (isEditorNote(note) && !onExtensionPage)) {
       window.open(url, "_blank", "noopener");
       return;
     }
     window.location.assign(url);
+  }
+
+  function editorPageUrl(id) {
+    return extensionUrl(`src/note-editor.html?id=${encodeURIComponent(id)}`);
+  }
+
+  function extensionUrl(path) {
+    try {
+      const runtime = globalThis.chrome?.runtime || globalThis.browser?.runtime;
+      if (runtime && typeof runtime.getURL === "function") {
+        return runtime.getURL(path);
+      }
+    } catch (error) {
+      handleExtensionContextError(error);
+    }
+    return "";
+  }
+
+  function showNotice(message) {
+    notice.textContent = message;
+    notice.hidden = false;
+    window.clearTimeout(noticeTimer);
+    noticeTimer = window.setTimeout(() => {
+      notice.hidden = true;
+    }, 6000);
+  }
+
+  function extensionStorageLocal() {
+    try {
+      return globalThis.chrome?.storage?.local || globalThis.browser?.storage?.local || null;
+    } catch (error) {
+      handleExtensionContextError(error);
+      return null;
+    }
+  }
+
+  function extensionStorageChanges() {
+    try {
+      return globalThis.chrome?.storage?.onChanged || globalThis.browser?.storage?.onChanged || null;
+    } catch (error) {
+      handleExtensionContextError(error);
+      return null;
+    }
+  }
+
+  async function getLocal(keys) {
+    const storage = extensionStorageLocal();
+    if (!storage || typeof storage.get !== "function") return {};
+    try {
+      return await storage.get(keys);
+    } catch (error) {
+      if (handleExtensionContextError(error)) return {};
+      throw error;
+    }
+  }
+
+  async function setLocal(data) {
+    const storage = extensionStorageLocal();
+    if (!storage || typeof storage.set !== "function") return;
+    try {
+      await storage.set(data);
+    } catch (error) {
+      if (!handleExtensionContextError(error)) {
+        throw error;
+      }
+    }
+  }
+
+  function handleExtensionContextError(error) {
+    if (!isExtensionContextError(error)) return false;
+    if (!extensionUnavailableShown) {
+      extensionUnavailableShown = true;
+      showNotice(EXTENSION_RECONNECT_MESSAGE);
+    }
+    return true;
+  }
+
+  function isExtensionContextError(error) {
+    return String(error?.message || error).includes("Extension context invalidated");
   }
 
   async function deleteNote(id) {
@@ -326,12 +486,12 @@
   }
 
   function save() {
-    return chrome.storage.local.set({ [STORAGE_KEY]: notes });
+    return setLocal({ [STORAGE_KEY]: notes });
   }
 
   function setCollapsed(value) {
     applyCollapsed(value);
-    chrome.storage.local.set({ [COLLAPSE_KEY]: value });
+    setLocal({ [COLLAPSE_KEY]: value });
   }
 
   function applyCollapsed(value) {
@@ -346,6 +506,18 @@
     root.style.marginLeft = value ? "0px" : `${panelWidth}px`;
   }
 
+  function setHistoryCollapsed(value) {
+    applyHistoryCollapsed(value);
+    setLocal({ [HISTORY_COLLAPSE_KEY]: value });
+  }
+
+  function applyHistoryCollapsed(value) {
+    historyCollapsed = value;
+    historySection.dataset.collapsed = String(value);
+    historyChevron.textContent = value ? "▸" : "▾";
+    historyToggle.setAttribute("aria-expanded", String(!value));
+  }
+
   function wantsNewTab(event) {
     return Boolean(event.metaKey || event.ctrlKey);
   }
@@ -358,6 +530,114 @@
     listTitle.textContent = notes.length ? `Recent notes (${notes.length})` : "Recent notes";
 
     renderChildren(null, items);
+  }
+
+  function renderHistory() {
+    historyItems.innerHTML = "";
+    historyCount.textContent = String(linkHistory.length);
+    historyClear.hidden = linkHistory.length === 0;
+    historyEmpty.hidden = linkHistory.length > 0;
+
+    for (const entry of linkHistory) {
+      historyItems.appendChild(renderHistoryItem(entry));
+    }
+  }
+
+  function renderHistoryItem(entry) {
+    const li = document.createElement("li");
+    li.className = "history-item" + (isCurrentHistoryEntry(entry) ? " history-item--active" : "");
+
+    const row = document.createElement("div");
+    row.className = "history-item__row";
+
+    const icon = document.createElement("span");
+    icon.className = "history-item__icon";
+    icon.innerHTML = historyIcon(entry);
+
+    const body = document.createElement("div");
+    body.className = "history-item__body";
+    body.setAttribute("role", "button");
+    body.tabIndex = 0;
+
+    const title = document.createElement("div");
+    title.className = "history-item__title";
+    title.textContent = entry.title || titleFromUrl(entry.url);
+
+    const meta = document.createElement("div");
+    meta.className = "history-item__meta";
+    meta.textContent = `${compactUrl(entry.url)} - ${formatHistoryTime(entry.openedAt)}`;
+
+    body.append(title, meta);
+    const openCurrent = () => openHistoryEntry(entry, false);
+    body.addEventListener("click", openCurrent);
+    body.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        openCurrent();
+      }
+    });
+
+    const openNew = document.createElement("button");
+    openNew.className = "history-item__newtab";
+    openNew.type = "button";
+    openNew.title = "Open in new tab";
+    openNew.setAttribute("aria-label", "Open in new tab");
+    openNew.textContent = "↗";
+    openNew.addEventListener("click", (event) => {
+      event.stopPropagation();
+      openHistoryEntry(entry, true);
+    });
+
+    const del = document.createElement("button");
+    del.className = "history-item__delete";
+    del.type = "button";
+    del.title = "Remove from history";
+    del.setAttribute("aria-label", "Remove from history");
+    del.textContent = "×";
+    del.addEventListener("click", (event) => {
+      event.stopPropagation();
+      deleteHistoryEntry(historyEntryId(entry));
+    });
+
+    row.append(icon, body, openNew, del);
+    li.appendChild(row);
+
+    return li;
+  }
+
+  function openHistoryEntry(entry, newTab) {
+    if (!entry.url) return;
+    if (newTab) {
+      window.open(entry.url, "_blank", "noopener");
+      return;
+    }
+    window.location.assign(entry.url);
+  }
+
+  async function deleteHistoryEntry(id) {
+    linkHistory = linkHistory.filter((entry) => (entry.id || entry.url) !== id);
+    await saveLinkHistory();
+    renderHistory();
+  }
+
+  async function clearLinkHistory() {
+    linkHistory = [];
+    await saveLinkHistory();
+    renderHistory();
+  }
+
+  function saveLinkHistory() {
+    return setLocal({ [LINK_HISTORY_KEY]: linkHistory });
+  }
+
+  function normalizeLinkHistory(value) {
+    return normalize(value).filter((entry) => {
+      try {
+        return entry?.url && isOnlineNotepadHost(new URL(entry.url).hostname);
+      } catch {
+        return false;
+      }
+    });
   }
 
   // Renders subfolders then notes for a parent into the given container.
@@ -561,9 +841,29 @@
   // Per-type icon (HTML) shown against each note.
   function noteIcon(note) {
     if (isEditorNote(note)) {
-      return { tinymce: "✍️", tiptap: "⚡", plain: "📝", native: "📄" }[note.type] || "📄";
+      return { tinymce: "✍️", tiptap: "⚡", milkdown: "W", markdown: "MD", plain: "📝", native: "📄" }[note.type] || "📄";
     }
     return (note.url || "").includes("notepad.cc") ? CC_ICON : PW_ICON;
+  }
+
+  function historyIcon(entry) {
+    const url = entry.url || "";
+    if (url.includes("notepad.cc")) return CC_ICON;
+    if (url.includes("notepad.pw")) return PW_ICON;
+    return "🔗";
+  }
+
+  function historyEntryId(entry) {
+    return entry.id || entry.url || "";
+  }
+
+  function isCurrentHistoryEntry(entry) {
+    if (!entry.url) return false;
+    try {
+      return new URL(entry.url).href === new URL(location.href).href;
+    } catch {
+      return entry.url === location.href;
+    }
   }
 
   function beginRename(li, body, title, note) {
@@ -741,6 +1041,35 @@
     });
   }
 
+  function formatHistoryTime(value) {
+    const date = value ? new Date(value) : new Date();
+    return date.toLocaleString(undefined, {
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit"
+    });
+  }
+
+  function compactUrl(url) {
+    return (url || "").replace(/^https?:\/\//, "").replace(/\/$/, "");
+  }
+
+  function titleFromUrl(url) {
+    try {
+      const parsed = new URL(url);
+      const slug = decodeURIComponent(parsed.pathname.replace(/^\/+|\/+$/g, ""));
+      if (parsed.hostname === "notepad.pw" || parsed.hostname === "notepad.cc") {
+        return slug ? `${parsed.hostname}/${slug}` : parsed.hostname;
+      }
+      return parsed.pathname && parsed.pathname !== "/"
+        ? `${parsed.hostname}${parsed.pathname}`
+        : parsed.hostname;
+    } catch {
+      return url || "Link";
+    }
+  }
+
   function styles() {
     return `
       :host { all: initial; }
@@ -832,6 +1161,11 @@
       }
       .new-note:hover { background: #087c65; }
       .new-note:active { transform: translateY(1px); }
+      .notice {
+        background: #fff7e8; border: 1px solid #f2c36b; border-radius: 8px;
+        color: #6b4a00; font-size: 12px; font-weight: 700; line-height: 1.35;
+        padding: 8px 10px;
+      }
       .list-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
       .list-title { font-size: 12px; font-weight: 700; color: #303941; }
       .list-actions { display: flex; align-items: baseline; gap: 12px; }
@@ -848,7 +1182,7 @@
       .items {
         list-style: none; margin: 0; padding: 0;
         display: flex; flex-direction: column; gap: 6px;
-        overflow-y: auto; flex: 1;
+        overflow-y: auto; flex: 1 1 auto; max-height: none; min-height: 0;
       }
       .folder { list-style: none; }
       .folder__head {
@@ -958,6 +1292,104 @@
         background: #ffffff; border: 1px dashed #d7dde2; border-radius: 10px;
         padding: 18px 12px; text-align: center; color: #5f6b74; font-size: 12px;
       }
+      .history {
+        border-top: 1px solid #e2e7eb;
+        display: flex; flex: 0 0 auto; flex-direction: column;
+        gap: 8px; margin-top: 0; max-height: 42vh; min-height: 0; padding-top: 10px;
+      }
+      .history[data-collapsed="true"] {
+        max-height: none;
+      }
+      .history__head {
+        align-items: center; background: #eef2f4; border: 1px solid #e2e7eb;
+        border-radius: 9px; display: flex; gap: 6px; justify-content: space-between;
+        padding: 7px 8px;
+      }
+      .history__head:hover { background: #e6ecef; }
+      .history__toggle {
+        display: flex; align-items: center; flex: 1; gap: 6px; min-width: 0;
+        border: 0; background: none; color: #303941; cursor: pointer;
+        font: inherit; padding: 0; text-align: left;
+      }
+      .history__chevron {
+        border: 0; background: none; color: #5f6b74; font-size: 11px; width: 14px; flex-shrink: 0;
+      }
+      .history__icon { font-size: 14px; line-height: 1; flex-shrink: 0; }
+      .history__title {
+        color: #2a343b; flex: 1; font-size: 13px; font-weight: 800;
+        overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      }
+      .history__count {
+        background: #d7e0e4; color: #566169; border-radius: 999px;
+        font-size: 10px; font-weight: 700; padding: 1px 7px;
+      }
+      .history__clear {
+        border: 0; background: transparent; border-radius: 6px; color: #0d9276;
+        cursor: pointer; flex-shrink: 0; font-size: 12px; font-weight: 800;
+        padding: 3px 5px;
+      }
+      .history__clear:hover { background: #d9ece4; }
+      .history__items {
+        list-style: none; margin: 0; padding: 0;
+        display: flex; flex: 0 1 auto; flex-direction: column; gap: 6px; overflow-y: auto;
+        max-height: calc(42vh - 46px); min-height: 0;
+        padding-left: 18px; position: relative;
+      }
+      .history__items::before {
+        content: ""; position: absolute; left: 8px; top: -4px; bottom: 10px;
+        width: 2px; border-radius: 2px; background: #d3dbe0;
+      }
+      .history__items > li { position: relative; }
+      .history__items > li::before {
+        content: ""; position: absolute; left: -10px; top: 17px;
+        width: 10px; height: 2px; border-radius: 2px; background: #d3dbe0;
+      }
+      .history[data-collapsed="true"] .history__items,
+      .history[data-collapsed="true"] .history__empty {
+        display: none;
+      }
+      .history__empty {
+        background: #ffffff; border: 1px dashed #d7dde2; border-radius: 10px;
+        color: #7a848c; font-size: 12px; margin-left: 18px; padding: 16px 12px; text-align: center;
+      }
+      .history-item {
+        background: #ffffff; border: 1px solid #e2e7eb; border-radius: 10px;
+        overflow: hidden;
+      }
+      .history-item:hover { border-color: #cfd6db; }
+      .history-item--active { border-color: #0d9276; box-shadow: 0 0 0 2px rgba(13, 146, 118, 0.16); }
+      .history-item__row {
+        display: flex; align-items: center; gap: 8px;
+        padding: 8px 9px;
+      }
+      .history-item__icon {
+        flex-shrink: 0; width: 22px; height: 22px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 14px; line-height: 1;
+      }
+      .history-item__body { flex: 1; min-width: 0; cursor: pointer; }
+      .history-item__title {
+        font-size: 12px; font-weight: 800; color: #151b20;
+        overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      }
+      .history-item__meta {
+        font-size: 10.5px; color: #7a848c; margin-top: 2px;
+        overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      }
+      .history-item__newtab,
+      .history-item__delete {
+        flex-shrink: 0; width: 24px; height: 24px; border: 0; border-radius: 7px;
+        background: #f1f4f6; color: #6b7580; font-size: 13px; line-height: 1; cursor: pointer;
+        opacity: 0; transition: opacity 120ms ease;
+      }
+      .history-item:hover .history-item__newtab,
+      .history-item:hover .history-item__delete,
+      .history-item:focus-within .history-item__newtab,
+      .history-item:focus-within .history-item__delete {
+        opacity: 1;
+      }
+      .history-item__newtab:hover { background: #e4f1ec; color: #0d9276; }
+      .history-item__delete:hover { background: #fbe4e4; color: #c0392b; }
       .modal[hidden] { display: none; }
       .modal {
         position: fixed; inset: 0; display: grid; place-items: center;

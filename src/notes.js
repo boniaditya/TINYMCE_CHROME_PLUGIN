@@ -4,6 +4,8 @@ const NOTEPADCC_BASE = "https://notepad.cc/";
 const EDITOR_LABELS = {
   tinymce: "TinyMCE",
   tiptap: "Tiptap",
+  milkdown: "Milkdown",
+  markdown: "Markdown",
   plain: "Plain Text",
   native: "Rich Text"
 };
@@ -88,10 +90,8 @@ async function createEditorNote(editor) {
   const notes = await getNotes();
   notes.unshift({ id, type: editor, title: `${label} note`, content: "", createdAt: Date.now() });
   await saveNotes(notes);
-  await chrome.tabs.create({
-    url: chrome.runtime.getURL(`src/note-editor.html?id=${encodeURIComponent(id)}`),
-    active: true
-  });
+  const url = extensionUrl(`src/note-editor.html?id=${encodeURIComponent(id)}`);
+  if (url) await chrome.tabs.create({ url, active: true });
   await render();
 }
 
@@ -101,9 +101,17 @@ function isEditorNote(note) {
 
 function openNote(note) {
   const url = isEditorNote(note)
-    ? chrome.runtime.getURL(`src/note-editor.html?id=${encodeURIComponent(note.id)}`)
+    ? extensionUrl(`src/note-editor.html?id=${encodeURIComponent(note.id)}`)
     : note.url;
   if (url) chrome.tabs.create({ url, active: true });
+}
+
+function extensionUrl(path) {
+  try {
+    return chrome.runtime.getURL(path);
+  } catch {
+    return "";
+  }
 }
 
 async function deleteNote(id) {
@@ -145,7 +153,7 @@ const CC_ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" wid
 
 function noteIcon(note) {
   if (isEditorNote(note)) {
-    return { tinymce: "✍️", tiptap: "⚡", plain: "📝", native: "📄" }[note.type] || "📄";
+    return { tinymce: "✍️", tiptap: "⚡", milkdown: "W", markdown: "MD", plain: "📝", native: "📄" }[note.type] || "📄";
   }
   return (note.url || "").includes("notepad.cc") ? CC_ICON : PW_ICON;
 }
