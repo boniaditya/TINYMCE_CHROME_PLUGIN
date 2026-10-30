@@ -3,6 +3,7 @@
   const LINK_HISTORY_KEY = "notepadLinkHistory";
   const COLLAPSE_KEY = "notepadSidebarCollapsed";
   const HISTORY_COLLAPSE_KEY = "notepadLinkHistoryCollapsed";
+  const SETTINGS_KEY = "notepadSettings";
   const FOLDERS_KEY = "notepadFolders";
   const NOTEPAD_BASE = "https://notepad.pw/";
   const NOTEPADCC_BASE = "https://notepad.cc/";
@@ -14,6 +15,8 @@
   const MAX_WIDTH = 520;
   let panelWidth = DEFAULT_WIDTH;
   const EDITOR_LABELS = {
+    word: "Word Document",
+    ckeditor: "CKEditor",
     tinymce: "TinyMCE",
     tiptap: "Tiptap",
     milkdown: "Milkdown",
@@ -56,7 +59,7 @@
             <span class="logo">📝</span>
             <strong>Notepad Library</strong>
           </div>
-          <button class="collapse" type="button" title="Hide sidebar" aria-label="Hide sidebar">‹</button>
+          <div class="head__actions"><button class="settings" type="button" title="Settings" aria-label="Open settings">⚙</button><button class="collapse" type="button" title="Hide sidebar" aria-label="Hide sidebar">‹</button></div>
         </header>
         <button class="new-note" type="button">+ New Note</button>
         <div class="notice" role="status" hidden></div>
@@ -96,6 +99,8 @@
           <div class="modal__options">
             <button class="opt" type="button" data-editor="notepad"><span class="opt__icon">🌐</span><span class="opt__text"><span class="opt__title">notepad.pw</span><span class="opt__desc">Open a fresh online notepad page</span></span></button>
             <button class="opt" type="button" data-editor="notepadcc"><span class="opt__icon">🗒️</span><span class="opt__text"><span class="opt__title">notepad.cc</span><span class="opt__desc">Open a fresh notepad.cc page</span></span></button>
+            <button class="opt" type="button" data-editor="word"><span class="opt__icon">W</span><span class="opt__text"><span class="opt__title">Word Document</span><span class="opt__desc">Edit .doc and .docx files offline</span></span></button>
+            <button class="opt" type="button" data-editor="ckeditor"><span class="opt__icon">CK</span><span class="opt__text"><span class="opt__title">CKEditor</span><span class="opt__desc">Classic rich text editor</span></span></button>
             <button class="opt" type="button" data-editor="tinymce"><span class="opt__icon">✍️</span><span class="opt__text"><span class="opt__title">TinyMCE</span><span class="opt__desc">Rich text editor with a toolbar</span></span></button>
             <button class="opt" type="button" data-editor="tiptap"><span class="opt__icon">⚡</span><span class="opt__text"><span class="opt__title">Tiptap</span><span class="opt__desc">Minimal keyboard-first editor</span></span></button>
             <button class="opt" type="button" data-editor="milkdown"><span class="opt__icon">W</span><span class="opt__text"><span class="opt__title">Milkdown</span><span class="opt__desc">WYSIWYG Markdown editor</span></span></button>
@@ -110,6 +115,7 @@
   const wrap = shadow.querySelector(".wrap");
   const handle = shadow.querySelector(".handle");
   const collapseButton = shadow.querySelector(".collapse");
+  const settingsButton = shadow.querySelector(".settings");
   const newNoteButton = shadow.querySelector(".new-note");
   const clearButton = shadow.querySelector(".clear");
   const notice = shadow.querySelector(".notice");
@@ -130,6 +136,10 @@
 
   handle.addEventListener("click", () => setCollapsed(false));
   collapseButton.addEventListener("click", () => setCollapsed(true));
+  settingsButton.addEventListener("click", () => {
+    const url = extensionUrl("src/settings.html");
+    if (url) window.open(url, "_blank", "noopener");
+  });
   newNoteButton.addEventListener("click", () => { modal.hidden = false; });
   newFolderButton.addEventListener("click", createFolder);
   historyToggle.addEventListener("click", () => setHistoryCollapsed(!historyCollapsed));
@@ -202,7 +212,8 @@
       FOLDERS_KEY,
       COLLAPSE_KEY,
       HISTORY_COLLAPSE_KEY,
-      WIDTH_KEY
+      WIDTH_KEY,
+      SETTINGS_KEY
     ]);
     notes = normalize(data[STORAGE_KEY]);
     const rawLinkHistory = normalize(data[LINK_HISTORY_KEY]);
@@ -211,6 +222,7 @@
     setWidth(clampWidth(Number(data[WIDTH_KEY]) || DEFAULT_WIDTH), false);
     applyCollapsed(Boolean(data[COLLAPSE_KEY]));
     applyHistoryCollapsed(Boolean(data[HISTORY_COLLAPSE_KEY]));
+    historySection.hidden = data[SETTINGS_KEY]?.showLinkHistory === false;
     await captureCurrentNote();
     if (linkHistory.length !== rawLinkHistory.length) {
       await saveLinkHistory();
@@ -295,7 +307,7 @@
       const slug = decodeURIComponent(location.pathname.replace(/^\/+/, "").replace(/\/+$/, ""));
       return slug && !slug.includes("/") ? slug : "";
     }
-    if (location.pathname.endsWith("/note-editor.html")) {
+    if (location.pathname.endsWith("/note-editor.html") || location.pathname.endsWith("/word-editor.html")) {
       return new URLSearchParams(location.search).get("id") || "";
     }
     return "";
@@ -344,7 +356,7 @@
     });
     await save();
     renderList();
-    const url = editorPageUrl(id);
+    const url = editorPageUrl(id, editor);
     if (!url) {
       showNotice(extensionUnavailableShown
         ? EXTENSION_RECONNECT_MESSAGE
@@ -368,7 +380,7 @@
 
   function noteUrl(note) {
     return isEditorNote(note)
-      ? editorPageUrl(note.id)
+      ? editorPageUrl(note.id, note.type)
       : note.url;
   }
 
@@ -394,8 +406,9 @@
     window.location.assign(url);
   }
 
-  function editorPageUrl(id) {
-    return extensionUrl(`src/note-editor.html?id=${encodeURIComponent(id)}`);
+  function editorPageUrl(id, type) {
+    const page = type === "word" ? "word-editor.html" : "note-editor.html";
+    return extensionUrl(`src/${page}?id=${encodeURIComponent(id)}`);
   }
 
   function extensionUrl(path) {
@@ -474,12 +487,16 @@
   }
 
   async function deleteNote(id) {
+    const settings = await getLocal(SETTINGS_KEY);
+    if (settings[SETTINGS_KEY]?.confirmDelete !== false && !window.confirm("Delete this note?")) return;
     notes = notes.filter((note) => note.id !== id);
     await save();
     renderList();
   }
 
   async function clearAll() {
+    const settings = await getLocal(SETTINGS_KEY);
+    if (settings[SETTINGS_KEY]?.confirmDelete !== false && !window.confirm("Delete all notes? This cannot be undone unless you have a backup.")) return;
     notes = [];
     await save();
     renderList();
@@ -841,7 +858,7 @@
   // Per-type icon (HTML) shown against each note.
   function noteIcon(note) {
     if (isEditorNote(note)) {
-      return { tinymce: "✍️", tiptap: "⚡", milkdown: "W", markdown: "MD", plain: "📝", native: "📄" }[note.type] || "📄";
+      return { word: "W", tinymce: "✍️", tiptap: "⚡", milkdown: "W", markdown: "MD", plain: "📝", native: "📄" }[note.type] || "📄";
     }
     return (note.url || "").includes("notepad.cc") ? CC_ICON : PW_ICON;
   }
@@ -1142,6 +1159,7 @@
         pointer-events: auto;
       }
       .head { display: flex; align-items: center; justify-content: space-between; }
+      .head__actions { display: flex; gap: 6px; }
       .brand { display: flex; align-items: center; gap: 8px; }
       .brand strong { font-size: 16px; }
       .logo {
@@ -1149,11 +1167,12 @@
         width: 28px; height: 28px; background: #ffffff;
         border: 1px solid #e2e7eb; border-radius: 8px; font-size: 15px;
       }
-      .collapse {
+      .collapse, .settings {
         border: 0; background: #e8edf0; color: #24313a; cursor: pointer;
         width: 28px; height: 28px; border-radius: 8px; font-size: 18px; line-height: 1;
       }
-      .collapse:hover { background: #dce4e8; }
+      .collapse:hover, .settings:hover { background: #dce4e8; }
+      .settings { font-size: 14px; }
       .new-note {
         border: 0; border-radius: 10px; background: #0d9276; color: #fff;
         font-weight: 800; min-height: 42px; cursor: pointer;

@@ -1,6 +1,7 @@
 const STORAGE_KEY = "notepadHistory";
 
 const EDITOR_LABELS = {
+  ckeditor: "CKEditor",
   tinymce: "TinyMCE",
   tiptap: "Tiptap",
   milkdown: "Milkdown",
@@ -24,6 +25,7 @@ const editorError = document.querySelector("#editorError");
 const loremButton = document.querySelector("#loremButton");
 const exportButton = document.querySelector("#exportButton");
 const exportMenu = document.querySelector("#exportMenu");
+const settingsButton = document.querySelector("#settingsButton");
 
 const state = {
   id: null,
@@ -57,6 +59,7 @@ async function init() {
   noteTitle.value = record.title || "";
 
   noteTitle.addEventListener("input", scheduleSave);
+  settingsButton.addEventListener("click", () => chrome.tabs.create({ url: chrome.runtime.getURL("src/settings.html"), active: true }));
   installLoremControls();
   installExportControls();
   window.addEventListener("beforeunload", () => saveNow());
@@ -89,6 +92,9 @@ async function startEditor(content) {
   }
   if (state.type === "tinymce") {
     return startTinyMce(content);
+  }
+  if (state.type === "ckeditor") {
+    return startCkEditor(content);
   }
   if (state.type === "tiptap") {
     return startTiptap(content);
@@ -159,6 +165,57 @@ async function startTinyMce(content) {
 
   state.instance = editor;
   state.getContent = () => editor.getContent();
+}
+
+async function startCkEditor(content) {
+  const ckeditor = window.CKEDITOR;
+  if (!ckeditor?.ClassicEditor) throw new Error("ckeditor-unavailable");
+
+  setEditorMode("ckeditor");
+  richEditor.hidden = false;
+  plainEditor.hidden = true;
+  milkdownEditor.hidden = true;
+  markdownEditor.hidden = true;
+  richEditor.removeAttribute("contenteditable");
+  richEditor.innerHTML = content;
+
+  const editor = await ckeditor.ClassicEditor.create(richEditor, {
+    licenseKey: "GPL",
+    plugins: [
+      ckeditor.Essentials,
+      ckeditor.Paragraph,
+      ckeditor.Heading,
+      ckeditor.Bold,
+      ckeditor.Italic,
+      ckeditor.Underline,
+      ckeditor.Strikethrough,
+      ckeditor.Link,
+      ckeditor.List,
+      ckeditor.BlockQuote,
+      ckeditor.CodeBlock,
+      ckeditor.Table,
+      ckeditor.TableToolbar
+    ],
+    toolbar: {
+      items: [
+        "undo", "redo", "|",
+        "heading", "|",
+        "bold", "italic", "underline", "strikethrough", "link", "|",
+        "bulletedList", "numberedList", "blockQuote", "codeBlock", "|",
+        "insertTable"
+      ],
+      shouldNotGroupWhenFull: false
+    },
+    table: {
+      contentToolbar: ["tableColumn", "tableRow", "mergeTableCells"]
+    },
+    placeholder: "Start writing…"
+  });
+
+  state.instance = editor;
+  state.getContent = () => editor.getData();
+  editor.model.document.on("change:data", scheduleSave);
+  editor.editing.view.focus();
 }
 
 async function startTiptap(content) {
@@ -775,6 +832,12 @@ async function setCurrentEditorContent(content) {
   if (state.type === "tinymce" && state.instance?.setContent) {
     state.instance.setContent(content);
     state.instance.focus();
+    return;
+  }
+
+  if (state.type === "ckeditor" && state.instance?.setData) {
+    state.instance.setData(content);
+    state.instance.editing.view.focus();
     return;
   }
 

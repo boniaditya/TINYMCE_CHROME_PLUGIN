@@ -16,12 +16,20 @@
             <p id="subtitle">A collection of local &amp; online notepads</p>
           </div>
         </div>
+        <button id="settingsButton" class="settings-button" type="button" title="Settings" aria-label="Open settings">⚙</button>
       </header>
 
       <button id="newNoteButton" class="new-note" type="button">
         <span class="new-note__icon" aria-hidden="true">+</span>
         <span>New Note</span>
       </button>
+
+      <section class="backup" aria-label="Backup and restore">
+        <input id="restoreBackupInput" type="file" accept=".json,application/json" hidden>
+        <button id="exportBackupButton" type="button">Save full backup</button>
+        <button id="restoreBackupButton" type="button">Restore backup</button>
+        <p id="backupStatus" class="backup__status" role="status" hidden></p>
+      </section>
 
       <section class="list" aria-label="Saved notes">
         <div class="list__head">
@@ -50,6 +58,8 @@
         <div class="modal__options">
           <button class="opt" type="button" data-editor="notepad"><span class="opt__icon">🌐</span><span class="opt__text"><span class="opt__title">notepad.pw</span><span class="opt__desc">Open a fresh online notepad page</span></span></button>
           <button class="opt" type="button" data-editor="notepadcc"><span class="opt__icon">🗒️</span><span class="opt__text"><span class="opt__title">notepad.cc</span><span class="opt__desc">Open a fresh notepad.cc page</span></span></button>
+          <button class="opt" type="button" data-editor="word"><span class="opt__icon">W</span><span class="opt__text"><span class="opt__title">Word Document</span><span class="opt__desc">Edit .doc and .docx files offline</span></span></button>
+          <button class="opt" type="button" data-editor="ckeditor"><span class="opt__icon">CK</span><span class="opt__text"><span class="opt__title">CKEditor</span><span class="opt__desc">Classic rich text editor</span></span></button>
           <button class="opt" type="button" data-editor="tinymce"><span class="opt__icon">✍️</span><span class="opt__text"><span class="opt__title">TinyMCE</span><span class="opt__desc">Rich text editor with a toolbar</span></span></button>
           <button class="opt" type="button" data-editor="tiptap"><span class="opt__icon">⚡</span><span class="opt__text"><span class="opt__title">Tiptap</span><span class="opt__desc">Minimal keyboard-first editor</span></span></button>
           <button class="opt" type="button" data-editor="milkdown"><span class="opt__icon">W</span><span class="opt__text"><span class="opt__title">Milkdown</span><span class="opt__desc">WYSIWYG Markdown editor</span></span></button>

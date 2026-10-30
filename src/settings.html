@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Notepad Library settings</title>
+    <link rel="stylesheet" href="settings.css?v=10.0">
+  </head>
+  <body>
+    <main class="settings">
+      <header class="settings__header">
+        <div><span class="settings__eyebrow">Notepad Library</span><h1>Settings</h1><p>Personalize editing and keep a portable copy of your library.</p></div>
+        <button id="closeButton" class="icon-button" type="button" title="Close settings" aria-label="Close settings">×</button>
+      </header>
+
+      <section class="card">
+        <h2>General</h2>
+        <label class="field"><span><strong>Default editor</strong><small>Skip the editor chooser when creating a note.</small></span>
+          <select id="defaultEditor"><option value="">Ask every time</option><option value="word">Word document</option><option value="native">Rich text</option><option value="markdown">Markdown</option><option value="plain">Plain text</option><option value="tinymce">TinyMCE</option><option value="tiptap">Tiptap</option><option value="milkdown">Milkdown</option><option value="notepad">Notepad.pw</option><option value="notepadcc">Notepad.cc</option></select>
+        </label>
+        <label class="field"><span><strong>Default Word zoom</strong><small>Used for new documents that do not have a saved zoom level.</small></span>
+          <select id="wordDefaultZoom"><option value="0.75">75%</option><option value="1">100%</option><option value="1.25">125%</option><option value="1.5">150%</option></select>
+        </label>
+        <label class="field field--check"><span><strong>Confirm before deleting</strong><small>Ask before deleting notes or clearing the library.</small></span><input id="confirmDelete" type="checkbox"></label>
+        <label class="field field--check"><span><strong>Show link history</strong><small>Display recently opened Notepad links in the sidebar.</small></span><input id="showLinkHistory" type="checkbox"></label>
+        <p id="saveStatus" class="status" aria-live="polite">Settings are saved automatically.</p>
+      </section>
+
+      <section class="card">
+        <h2>Backup and restore</h2>
+        <p>Save every note, folder, document, preference, and link-history entry in one file. Keep it outside the extension so you can restore after reinstalling.</p>
+        <div class="button-row"><button id="exportBackupButton" class="primary" type="button">Save full backup</button><button id="restoreBackupButton" type="button">Restore backup</button></div>
+        <input id="restoreBackupInput" type="file" accept="application/json,.json" hidden>
+        <p id="backupStatus" class="status" aria-live="polite" hidden></p>
+      </section>
+
+      <section class="card card--danger"><h2>Reset preferences</h2><p>Return settings to their defaults. Your notes and documents will not be removed.</p><button id="resetButton" type="button">Reset settings</button></section>
+      <footer>Notepad Library <span id="versionLabel"></span></footer>
+    </main>
+    <script src="settings.js?v=10.0"></script>
+  </body>
+</html>

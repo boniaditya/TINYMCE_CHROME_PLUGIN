@@ -67,7 +67,8 @@ body[data-editor="markdown"] .note {
 }
 
 .note__lorem-button,
-.note__export-button {
+.note__export-button,
+.note__settings {
   background: #ffffff;
   border: 1px solid #dce3e8;
   border-radius: 8px;
@@ -86,11 +87,14 @@ body[data-editor="markdown"] .note {
 
 .note__lorem-button:hover,
 .note__export-button:hover,
+.note__settings:hover,
 .note__export-button[aria-expanded="true"] {
   background: #e4f1ec;
   border-color: #0d9276;
   color: #087c65;
 }
+
+.note__settings { flex: 0 0 34px; font-size: 17px; padding: 0; }
 
 .note__lorem-button:disabled,
 .note__export-button:disabled {
@@ -268,6 +272,25 @@ body[data-editor="markdown"] .note {
   background: #ffffff;
   flex: 0 0 auto;
   overflow: visible;
+}
+
+.note__host[data-editor="ckeditor"] .ck-editor {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+}
+
+.note__host[data-editor="ckeditor"] .ck-editor__main {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+}
+
+.note__host[data-editor="ckeditor"] .ck-editor__editable_inline {
+  min-height: 100%;
+  flex: 1;
+  padding: 28px 34px;
 }
 
 .note__milkdown .milkdown {

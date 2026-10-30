@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Note</title>
     <link rel="stylesheet" href="note-editor.css">
+    <link rel="stylesheet" href="../vendor/ckeditor5/ckeditor5.css">
   </head>
   <body>
     <main class="note">
@@ -22,6 +23,7 @@
           </div>
         </div>
         <span id="saveState" class="note__save">Saved</span>
+        <button id="settingsButton" class="note__settings" type="button" title="Settings" aria-label="Open settings">⚙</button>
       </header>
 
       <div id="editorHost" class="note__host">
@@ -38,6 +40,7 @@
       <p id="editorError" class="note__error" hidden></p>
     </main>
     <script src="notepad-sidebar.js"></script>
+    <script src="../vendor/ckeditor5/ckeditor5.umd.js"></script>
     <script src="note-editor.js"></script>
   </body>
 </html>

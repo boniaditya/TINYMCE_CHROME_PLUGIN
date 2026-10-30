@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Word document</title>
+    <link rel="stylesheet" href="word-editor.css?v=10.0">
+  </head>
+  <body>
+    <main class="word">
+      <header class="word__bar">
+        <div class="word__identity">
+          <span class="word__badge">W</span>
+          <input id="documentTitle" class="word__title" type="text" placeholder="Untitled document" spellcheck="false">
+        </div>
+        <div class="word__actions">
+          <button id="printButton" type="button" title="Print document">Print</button>
+          <label class="word__zoom" title="Document zoom">
+            <span>Zoom</span>
+            <select id="zoomSelect">
+              <option value="0.75">75%</option>
+              <option value="1" selected>100%</option>
+              <option value="1.25">125%</option>
+              <option value="1.5">150%</option>
+            </select>
+          </label>
+          <input id="fileInput" type="file" accept=".doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" hidden>
+          <button id="openButton" type="button">Open .doc / .docx</button>
+          <div class="word__export">
+            <button id="exportButton" type="button" aria-expanded="false">Export ▾</button>
+            <div id="exportMenu" class="word__menu" hidden>
+              <button type="button" data-format="docx">Word Document (.docx)</button>
+              <button type="button" data-format="doc">Word 97–2003 (.doc)</button>
+              <button type="button" data-format="html">Web Page (.html)</button>
+            </div>
+          </div>
+          <span id="saveState" class="word__save">Saved locally</span>
+          <button id="settingsButton" class="word__settings" type="button" title="Settings" aria-label="Open settings">⚙</button>
+        </div>
+      </header>
+      <div id="notice" class="word__notice" role="status" hidden></div>
+      <div id="formatToolbar" class="format-toolbar" role="toolbar" aria-label="Document formatting">
+        <button type="button" data-command="undo" title="Undo">↶</button>
+        <button type="button" data-command="redo" title="Redo">↷</button>
+        <span class="format-toolbar__divider"></span>
+        <select data-command="formatBlock" aria-label="Paragraph style" title="Paragraph style">
+          <option value="p">Normal</option><option value="h1">Title</option><option value="h2">Heading 1</option><option value="h3">Heading 2</option><option value="blockquote">Quote</option><option value="pre">Code</option>
+        </select>
+        <select data-command="fontName" aria-label="Font family" title="Font family">
+          <option value="Arial">Arial</option><option value="Calibri">Calibri</option><option value="Georgia">Georgia</option><option value="Times New Roman">Times New Roman</option><option value="Courier New">Courier New</option>
+        </select>
+        <select id="fontSizeSelect" aria-label="Font size" title="Font size">
+          <option value="10">10</option><option value="11" selected>11</option><option value="12">12</option><option value="14">14</option><option value="16">16</option><option value="18">18</option><option value="24">24</option><option value="36">36</option>
+        </select>
+        <span class="format-toolbar__divider"></span>
+        <button type="button" data-command="bold" title="Bold"><strong>B</strong></button>
+        <button type="button" data-command="italic" title="Italic"><em>I</em></button>
+        <button type="button" data-command="underline" title="Underline"><u>U</u></button>
+        <button type="button" data-command="strikeThrough" title="Strikethrough"><s>S</s></button>
+        <label class="format-toolbar__color" title="Text color">A<input type="color" id="textColor" value="#000000" aria-label="Text color"></label>
+        <label class="format-toolbar__color format-toolbar__color--highlight" title="Highlight color">A<input type="color" id="highlightColor" value="#fff59d" aria-label="Highlight color"></label>
+        <span class="format-toolbar__divider"></span>
+        <button type="button" data-command="justifyLeft" title="Align left">☰</button>
+        <button type="button" data-command="justifyCenter" title="Align center">≡</button>
+        <button type="button" data-command="justifyRight" title="Align right">☷</button>
+        <button type="button" data-command="justifyFull" title="Justify">▤</button>
+        <button type="button" data-command="outdent" title="Decrease indent">⇤</button>
+        <button type="button" data-command="indent" title="Increase indent">⇥</button>
+        <button type="button" data-command="insertOrderedList" title="Numbered list">1.</button>
+        <button type="button" data-command="insertUnorderedList" title="Bulleted list">•</button>
+        <span class="format-toolbar__divider"></span>
+        <button type="button" data-action="link" title="Insert link">Link</button>
+        <button type="button" data-action="table" title="Insert table">Table</button>
+        <button type="button" data-action="image" title="Insert image">Image</button>
+        <button type="button" data-action="rule" title="Horizontal line">―</button>
+        <button type="button" data-action="page-break" title="Page break">Page break</button>
+        <button type="button" data-action="clear" title="Clear formatting">Clear</button>
+      </div>
+      <div id="imageTools" class="image-tools" role="toolbar" aria-label="Image tools" hidden>
+        <button type="button" data-image-action="small">Small</button>
+        <button type="button" data-image-action="medium">Medium</button>
+        <button type="button" data-image-action="large">Large</button>
+        <button type="button" data-image-action="crop">Crop</button>
+        <button type="button" data-image-action="alt">Alt text</button>
+        <button type="button" data-image-action="remove" class="image-tools__danger">Remove</button>
+      </div>
+      <div id="imageResizeHandle" class="image-resize-handle" title="Drag to resize image" hidden></div>
+      <section class="word__paper-wrap">
+        <article id="editor" class="native-editor" contenteditable="true" spellcheck="true" aria-label="Document editing area"><p>Start writing, or open a local Word document.</p></article>
+      </section>
+      <div id="cropDialog" class="crop-dialog" role="dialog" aria-modal="true" aria-labelledby="cropTitle" hidden>
+        <div class="crop-dialog__backdrop" data-crop-close></div>
+        <div class="crop-dialog__card">
+          <div class="crop-dialog__head"><strong id="cropTitle">Crop image</strong><button type="button" data-crop-close aria-label="Close crop dialog">×</button></div>
+          <div class="crop-dialog__preview"><canvas id="cropCanvas"></canvas><div id="cropFrame" class="crop-dialog__frame"></div></div>
+          <div class="crop-dialog__controls">
+            <label>Left <input id="cropLeft" type="range" min="0" max="45" value="0"><output>0%</output></label>
+            <label>Right <input id="cropRight" type="range" min="0" max="45" value="0"><output>0%</output></label>
+            <label>Top <input id="cropTop" type="range" min="0" max="45" value="0"><output>0%</output></label>
+            <label>Bottom <input id="cropBottom" type="range" min="0" max="45" value="0"><output>0%</output></label>
+          </div>
+          <div class="crop-dialog__actions"><button type="button" data-crop-close>Cancel</button><button id="applyCropButton" type="button" class="crop-dialog__apply">Apply crop</button></div>
+        </div>
+      </div>
+    </main>
+    <script src="../vendor/docshift/docshift.min.js?v=0.0.73"></script>
+    <script src="../vendor/jsdoc-word/docToText.js?v=1"></script>
+    <script src="../vendor/jsdoc-word/textToDoc.js?v=1"></script>
+    <script src="notepad-sidebar.js?v=10.0"></script>
+    <script src="word-native-editor.js?v=10.0"></script>
+  </body>
+</html>

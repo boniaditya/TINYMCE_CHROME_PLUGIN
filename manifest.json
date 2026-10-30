@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Notepad Library",
-  "description": "A threaded notepad library for local notes, online notepads, history links, and WYSIWYG Markdown editing.",
-  "version": "7.1.5",
+  "description": "A threaded notepad library with offline Word, rich-text, Markdown, and online notepad editing.",
+  "version": "10.0",
   "permissions": [
     "webNavigation",
     "storage",
@@ -50,6 +50,8 @@
     {
       "resources": [
         "src/note-editor.html",
+        "src/word-editor.html",
+        "src/settings.html",
         "vendor/tinymce/*",
         "vendor/tinymce/*/*",
         "vendor/tinymce/*/*/*",
@@ -57,7 +59,10 @@
         "vendor/tiptap/*",
         "vendor/tiptap/*/*",
         "vendor/milkdown/*",
-        "vendor/milkdown/*/*"
+        "vendor/milkdown/*/*",
+        "vendor/ckeditor5/*",
+        "vendor/docshift/*",
+        "vendor/jsdoc-word/*"
       ],
       "matches": [
         "<all_urls>"

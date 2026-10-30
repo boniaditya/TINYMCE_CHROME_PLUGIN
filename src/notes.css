@@ -29,8 +29,27 @@ a {
 }
 
 .notes__header {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
   min-height: 44px;
 }
+
+.settings-button {
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid #d7dfe5;
+  border-radius: 9px;
+  color: #4b5862;
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 19px;
+  height: 38px;
+  justify-content: center;
+  width: 38px;
+}
+
+.settings-button:hover { background: #edf7f4; color: #087c65; }
 
 .notes__brand {
   align-items: center;
@@ -87,6 +106,49 @@ p {
   font-size: 20px;
   font-weight: 400;
   line-height: 1;
+}
+
+.backup {
+  display: grid;
+  gap: 7px;
+  grid-template-columns: 1fr 1fr;
+}
+
+.backup button {
+  background: #ffffff;
+  border: 1px solid #d7dfe5;
+  border-radius: 9px;
+  color: #34414b;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 750;
+  min-height: 37px;
+  padding: 0 10px;
+}
+
+.backup button:hover {
+  background: #edf7f4;
+  border-color: #77b9a9;
+  color: #087c65;
+}
+
+.backup button:disabled {
+  cursor: wait;
+  opacity: .55;
+}
+
+.backup__status {
+  background: #eef8f5;
+  border-radius: 7px;
+  color: #116b58;
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 7px 9px;
+}
+
+.backup__status--error {
+  background: #fff0f0;
+  color: #9a2f2f;
 }
 
 .list {

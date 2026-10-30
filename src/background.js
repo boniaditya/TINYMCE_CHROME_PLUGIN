@@ -1,6 +1,6 @@
 // Editor types that have been removed from the extension. Notes created with
 // them are purged from history so they never appear again.
-const PURGED_NOTE_TYPES = ["aloha", "jce", "ckeditor", "jck"];
+const PURGED_NOTE_TYPES = ["aloha", "jce", "jck"];
 const LINK_HISTORY_KEY = "notepadLinkHistory";
 const LINK_HISTORY_LIMIT = 100;
 const DIRECT_TRANSITIONS = new Set(["typed", "auto_bookmark"]);
