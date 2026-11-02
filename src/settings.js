@@ -21,8 +21,34 @@ async function init() {
   exportButton.addEventListener("click", exportFullBackup);
   restoreButton.addEventListener("click", () => restoreInput.click());
   restoreInput.addEventListener("change", restoreFullBackup);
+  initTabs();
   Object.values(controls).forEach((control) => control.addEventListener("change", saveSettings));
   await loadSettings();
+}
+
+function initTabs() {
+  const tabs = [...document.querySelectorAll("[data-settings-tab]")];
+  const selectTab = (selected) => {
+    tabs.forEach((tab) => {
+      const active = tab === selected;
+      tab.classList.toggle("is-active", active);
+      tab.setAttribute("aria-selected", String(active));
+      tab.tabIndex = active ? 0 : -1;
+      const panel = document.querySelector(`#${tab.dataset.settingsTab}`);
+      panel.hidden = !active;
+      panel.classList.toggle("is-active", active);
+    });
+  };
+  tabs.forEach((tab, index) => {
+    tab.addEventListener("click", () => selectTab(tab));
+    tab.addEventListener("keydown", (event) => {
+      if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+      event.preventDefault();
+      let nextIndex = event.key === "Home" ? 0 : event.key === "End" ? tabs.length - 1 : (index + (event.key === "ArrowRight" ? 1 : -1) + tabs.length) % tabs.length;
+      tabs[nextIndex].focus();
+      selectTab(tabs[nextIndex]);
+    });
+  });
 }
 
 async function loadSettings() {

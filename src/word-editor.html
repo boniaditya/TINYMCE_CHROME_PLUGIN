@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Word document</title>
-    <link rel="stylesheet" href="word-editor.css?v=10.0">
+    <link rel="stylesheet" href="word-editor.css?v=19.0">
   </head>
   <body>
     <main class="word">
@@ -13,8 +13,9 @@
           <span class="word__badge">W</span>
           <input id="documentTitle" class="word__title" type="text" placeholder="Untitled document" spellcheck="false">
         </div>
-        <div class="word__actions">
-          <button id="printButton" type="button" title="Print document">Print</button>
+        <nav class="word__actions" aria-label="Document menu">
+          <button id="tabsToggleButton" class="word-menu-item" type="button" aria-expanded="true" title="Show or hide document tabs">☰ Tabs</button>
+          <button id="printButton" class="word-menu-item" type="button" title="Print document">Print</button>
           <label class="word__zoom" title="Document zoom">
             <span>Zoom</span>
             <select id="zoomSelect">
@@ -25,9 +26,9 @@
             </select>
           </label>
           <input id="fileInput" type="file" accept=".doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" hidden>
-          <button id="openButton" type="button">Open .doc / .docx</button>
+          <button id="openButton" class="word-menu-item" type="button">Open .doc / .docx</button>
           <div class="word__export">
-            <button id="exportButton" type="button" aria-expanded="false">Export ▾</button>
+            <button id="exportButton" class="word-menu-item" type="button" aria-expanded="false">Export ▾</button>
             <div id="exportMenu" class="word__menu" hidden>
               <button type="button" data-format="docx">Word Document (.docx)</button>
               <button type="button" data-format="doc">Word 97–2003 (.doc)</button>
@@ -35,8 +36,8 @@
             </div>
           </div>
           <span id="saveState" class="word__save">Saved locally</span>
-          <button id="settingsButton" class="word__settings" type="button" title="Settings" aria-label="Open settings">⚙</button>
-        </div>
+          <button id="settingsButton" class="word__settings word-menu-item" type="button" title="Settings" aria-label="Open settings">⚙</button>
+        </nav>
       </header>
       <div id="notice" class="word__notice" role="status" hidden></div>
       <div id="formatToolbar" class="format-toolbar" role="toolbar" aria-label="Document formatting">
@@ -85,9 +86,28 @@
         <button type="button" data-image-action="remove" class="image-tools__danger">Remove</button>
       </div>
       <div id="imageResizeHandle" class="image-resize-handle" title="Drag to resize image" hidden></div>
-      <section class="word__paper-wrap">
-        <article id="editor" class="native-editor" contenteditable="true" spellcheck="true" aria-label="Document editing area"><p>Start writing, or open a local Word document.</p></article>
-      </section>
+      <div id="wordWorkspace" class="word__workspace" data-tabs-side="left">
+        <aside id="documentTabsPanel" class="document-tabs" aria-label="Document tabs">
+          <div class="document-tabs__head">
+            <strong>Document tabs</strong>
+            <div class="document-tabs__controls">
+              <button id="moveTabsButton" type="button" title="Move tabs panel to the right" aria-label="Move tabs panel to the right">⇥</button>
+              <button id="collapseTabsButton" type="button" title="Hide document tabs" aria-label="Hide document tabs">‹</button>
+              <button id="addTabButton" type="button" title="Add document tab" aria-label="Add document tab">+</button>
+            </div>
+          </div>
+          <div id="documentTabsList" class="document-tabs__list" role="tablist" aria-orientation="vertical"></div>
+          <p class="document-tabs__hint">Each tab has its own editable content and is saved with this document.</p>
+          <div id="tabContextMenu" class="tab-context-menu" role="menu" hidden>
+            <button type="button" role="menuitem" data-tab-menu-action="rename">Rename</button>
+            <button type="button" role="menuitem" data-tab-menu-action="duplicate">Duplicate</button>
+            <button type="button" role="menuitem" data-tab-menu-action="delete" class="danger">Delete</button>
+          </div>
+        </aside>
+        <section class="word__paper-wrap">
+          <article id="editor" class="native-editor" contenteditable="true" spellcheck="true" aria-label="Document editing area"><p>Start writing, or open a local Word document.</p></article>
+        </section>
+      </div>
       <div id="cropDialog" class="crop-dialog" role="dialog" aria-modal="true" aria-labelledby="cropTitle" hidden>
         <div class="crop-dialog__backdrop" data-crop-close></div>
         <div class="crop-dialog__card">
@@ -106,7 +126,7 @@
     <script src="../vendor/docshift/docshift.min.js?v=0.0.73"></script>
     <script src="../vendor/jsdoc-word/docToText.js?v=1"></script>
     <script src="../vendor/jsdoc-word/textToDoc.js?v=1"></script>
-    <script src="notepad-sidebar.js?v=10.0"></script>
-    <script src="word-native-editor.js?v=10.0"></script>
+    <script src="notepad-sidebar.js?v=19.0"></script>
+    <script src="word-native-editor.js?v=19.0"></script>
   </body>
 </html>

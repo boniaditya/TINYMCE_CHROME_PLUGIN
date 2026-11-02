@@ -1,0 +1,68 @@
+📚 NOTEPAD LIBRARY
+
+Notepad Library is a browser workspace for creating, organizing, editing, and reopening notes and everyday files.
+
+It keeps local writing in one library instead of scattering drafts across browser tabs. You can create folders, arrange related items, choose a writing mode, and return to recent work from the sidebar. Compatible online links can also be kept alongside local content.
+
+✨ CORE FEATURES
+
+• Create local notes and organize them in folders
+• Write in plain text, formatted text, or Markdown-style modes
+• Import and edit everyday DOC and DOCX files locally
+• Open notepad.pw and notepad.cc pages
+• Reopen compatible links from a focused history
+• Export individual notes and files
+• Back up the complete collection to one portable file
+• Restore saved data after reinstalling
+
+🗂️ LOCAL NOTES
+
+Use the popup and sidebar to create notes, rename them, place them in folders, and reopen them later. The New Note window groups the available modes into expandable sections so the list remains easy to browse. A preferred mode can be selected in preferences.
+
+The sidebar is also available on compatible online pages. Its recent-links list is limited to those two services and does not collect a general record of unrelated websites.
+
+📄 DOCUMENT EDITING
+
+The offline editor imports DOC and DOCX files. Its toolbar provides common paragraph formatting, color, alignment, lists, links, tables, images, page breaks, undo, redo, printing, and zoom controls.
+
+Each file can contain multiple tabs. They provide separate editable sections inside the same saved item and can be added, renamed, duplicated, or deleted. The panel can be placed on either side of the editor or collapsed when more space is needed.
+
+Images can be selected, resized, cropped, given alternative text, or removed. Changes are saved locally automatically and can be exported when an external copy is needed.
+
+Complex layouts or unsupported legacy features may be simplified during import. This workspace is intended for practical offline work and common formatting rather than exact reproduction of every desktop word-processing feature.
+
+📝 MARKDOWN AND FORMATTED NOTES
+
+Markdown notes provide source, split, and preview views. The split view places the source beside the rendered result. Formatted-note modes provide a visual editing surface for users who prefer to work directly with styled content.
+
+A Lorem Ipsum control can append sample content suited to the current note type. This is useful when testing formatting or preview layouts without replacing existing content.
+
+💾 BACKUP AND RESTORE
+
+The full-backup tool saves notes, folders, embedded images, file tabs, recent links, and preferences in one JSON file. An integrity checksum helps detect damaged or modified data.
+
+Keep the download outside the app. Browser data may be removed during an uninstall, so a separate copy is required if you want to recover the collection after reinstalling or moving to another profile.
+
+Save and recovery controls are available from the popup and a dedicated options section.
+
+📤 EXPORT
+
+Individual notes can be exported in formats appropriate to their mode. Word files can also be saved for use elsewhere. Results may differ from the imported source when it contains formatting that the local editor does not support.
+
+⚙️ SETTINGS
+
+The Settings page contains separate sections for general preferences, data protection, and optional links to other products from the same publisher.
+
+General preferences include the default writing mode, default document zoom, delete confirmation, and supported-link history visibility. Resetting preferences does not delete notes or documents.
+
+🔐 PRIVACY AND STORAGE
+
+Local content is stored in Chrome extension storage. Editing and file conversion use packaged code; remote JavaScript is not loaded.
+
+When you open a compatible online page, it remains on its original website. The app records only the link needed for the recent-items feature. Its visibility can be disabled in Settings.
+
+The local collection is not automatically uploaded to an online storage service. Use Save Full Backup to keep a separate copy.
+
+🚀 VERSION 20.0
+
+This release adds a tabbed configuration layout with dedicated General and Backup sections, plus an optional publisher-links page. It retains offline Word editing, file tabs, image adjustments, export, automatic local saving, categorized note creation, sample-text generation, and full-library recovery.

@@ -6,6 +6,14 @@ const openButton = document.querySelector("#openButton");
 const printButton = document.querySelector("#printButton");
 const zoomSelect = document.querySelector("#zoomSelect");
 const settingsButton = document.querySelector("#settingsButton");
+const tabsToggleButton = document.querySelector("#tabsToggleButton");
+const wordWorkspace = document.querySelector("#wordWorkspace");
+const documentTabsPanel = document.querySelector("#documentTabsPanel");
+const documentTabsList = document.querySelector("#documentTabsList");
+const addTabButton = document.querySelector("#addTabButton");
+const moveTabsButton = document.querySelector("#moveTabsButton");
+const collapseTabsButton = document.querySelector("#collapseTabsButton");
+const tabContextMenu = document.querySelector("#tabContextMenu");
 const exportButton = document.querySelector("#exportButton");
 const exportMenu = document.querySelector("#exportMenu");
 const saveState = document.querySelector("#saveState");
@@ -33,14 +41,21 @@ const state = {
   zoom: 1,
   savedRange: null,
   selectedImage: null,
-  cropImage: null
+  cropImage: null,
+  documentTabs: [],
+  activeDocumentTabId: null,
+  tabsPanelOpen: true,
+  tabsPanelSide: "left",
+  contextTabId: null
 };
 
 init();
 
 async function init() {
   const requiredElements = {
-    titleInput, fileInput, openButton, printButton, zoomSelect, settingsButton, exportButton,
+    titleInput, fileInput, openButton, printButton, zoomSelect, settingsButton, tabsToggleButton,
+    wordWorkspace, documentTabsPanel, documentTabsList, addTabButton, moveTabsButton,
+    collapseTabsButton, tabContextMenu, exportButton,
     exportMenu, saveState, notice, editorElement, formatToolbar,
     fontSizeSelect, textColor, highlightColor, imageTools, imageResizeHandle,
     cropDialog, cropCanvas, cropFrame, applyCropButton, ...cropInputs
@@ -57,6 +72,7 @@ async function init() {
   titleInput.value = state.record.title || "Untitled document";
   state.sourceFormat = state.record.sourceFormat || "docx";
   state.sourceName = state.record.sourceName || `${safeFilename(titleInput.value)}.${state.sourceFormat}`;
+  initializeDocumentTabs();
   const settingsData = await chrome.storage.local.get("notepadSettings");
   const defaultZoom = Number(settingsData.notepadSettings?.wordDefaultZoom) || 1;
   state.zoom = Number(state.record.viewZoom) || defaultZoom;
@@ -64,7 +80,7 @@ async function init() {
   applyZoom();
 
   try {
-    state.editor = await createEditor(state.record.content || "<p>Start writing, or open a local Word document.</p>");
+    state.editor = await createEditor(activeDocumentTab().content);
   } catch (error) {
     console.error(error);
     showNotice("The local Word editor could not start. Reload the extension and try again.", true);
@@ -78,6 +94,14 @@ async function init() {
   openButton.addEventListener("click", () => fileInput.click());
   printButton.addEventListener("click", () => window.print());
   settingsButton.addEventListener("click", () => chrome.tabs.create({ url: chrome.runtime.getURL("src/settings.html"), active: true }));
+  tabsToggleButton.addEventListener("click", toggleTabsPanel);
+  moveTabsButton.addEventListener("click", moveTabsPanel);
+  collapseTabsButton.addEventListener("click", collapseTabsPanel);
+  addTabButton.addEventListener("click", addDocumentTab);
+  tabContextMenu.addEventListener("click", handleTabContextAction);
+  document.addEventListener("click", closeTabContextMenu);
+  document.addEventListener("keydown", (event) => { if (event.key === "Escape") closeTabContextMenu(); });
+  renderDocumentTabs();
   zoomSelect.addEventListener("change", changeZoom);
   fileInput.addEventListener("change", importSelectedFile);
   exportButton.addEventListener("click", toggleExportMenu);
@@ -85,6 +109,189 @@ async function init() {
   document.addEventListener("click", closeExportMenuFromOutside);
   window.addEventListener("beforeunload", saveNow);
   state.editor.focus();
+}
+
+function initializeDocumentTabs() {
+  const fallbackContent = state.record.content || "<p>Start writing, or open a local Word document.</p>";
+  const storedTabs = Array.isArray(state.record.documentTabs) ? state.record.documentTabs : [];
+  state.documentTabs = storedTabs
+    .filter((tab) => tab && typeof tab === "object")
+    .map((tab, index) => ({
+      id: String(tab.id || makeTabId()),
+      title: String(tab.title || `Tab ${index + 1}`),
+      content: typeof tab.content === "string" ? tab.content : "<p></p>"
+    }));
+  if (!state.documentTabs.length) {
+    state.documentTabs = [{ id: makeTabId(), title: "Tab 1", content: fallbackContent }];
+  }
+  state.activeDocumentTabId = state.documentTabs.some((tab) => tab.id === state.record.activeDocumentTabId)
+    ? state.record.activeDocumentTabId
+    : state.documentTabs[0].id;
+  state.tabsPanelOpen = state.record.tabsPanelOpen !== false;
+  state.tabsPanelSide = state.record.tabsPanelSide === "right" ? "right" : "left";
+  applyTabsPanelVisibility();
+}
+
+function makeTabId() {
+  return `tab-${crypto.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`}`;
+}
+
+function activeDocumentTab() {
+  return state.documentTabs.find((tab) => tab.id === state.activeDocumentTabId) || state.documentTabs[0];
+}
+
+function captureActiveTabContent() {
+  const tab = activeDocumentTab();
+  if (tab && state.editor) tab.content = state.editor.getData();
+}
+
+function toggleTabsPanel() {
+  state.tabsPanelOpen = !state.tabsPanelOpen;
+  applyTabsPanelVisibility();
+  scheduleSave();
+}
+
+function collapseTabsPanel() {
+  state.tabsPanelOpen = false;
+  applyTabsPanelVisibility();
+  scheduleSave();
+  tabsToggleButton.focus();
+}
+
+function moveTabsPanel() {
+  state.tabsPanelSide = state.tabsPanelSide === "left" ? "right" : "left";
+  applyTabsPanelPosition();
+  scheduleSave();
+}
+
+function applyTabsPanelVisibility() {
+  documentTabsPanel.hidden = !state.tabsPanelOpen;
+  tabsToggleButton.setAttribute("aria-expanded", String(state.tabsPanelOpen));
+  tabsToggleButton.classList.toggle("is-active", state.tabsPanelOpen);
+  applyTabsPanelPosition();
+}
+
+function applyTabsPanelPosition() {
+  const isRight = state.tabsPanelSide === "right";
+  wordWorkspace.dataset.tabsSide = state.tabsPanelSide;
+  moveTabsButton.textContent = isRight ? "⇤" : "⇥";
+  moveTabsButton.title = `Move tabs panel to the ${isRight ? "left" : "right"}`;
+  moveTabsButton.setAttribute("aria-label", moveTabsButton.title);
+  collapseTabsButton.textContent = isRight ? "›" : "‹";
+}
+
+function renderDocumentTabs() {
+  closeTabContextMenu();
+  documentTabsList.replaceChildren();
+  for (const tab of state.documentTabs) {
+    const row = document.createElement("div");
+    row.className = `document-tab${tab.id === state.activeDocumentTabId ? " is-active" : ""}`;
+    row.dataset.tabId = tab.id;
+    row.setAttribute("role", "tab");
+    row.setAttribute("aria-selected", String(tab.id === state.activeDocumentTabId));
+    row.setAttribute("aria-label", `${tab.title}. Right-click for actions.`);
+    row.tabIndex = tab.id === state.activeDocumentTabId ? 0 : -1;
+    row.textContent = tab.title;
+    row.addEventListener("click", () => switchDocumentTab(tab.id));
+    row.addEventListener("contextmenu", (event) => openTabContextMenu(event, tab.id));
+    row.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") { event.preventDefault(); switchDocumentTab(tab.id); }
+      if (event.key === "ContextMenu" || (event.shiftKey && event.key === "F10")) {
+        event.preventDefault();
+        const rect = row.getBoundingClientRect();
+        openTabContextMenu({ preventDefault() {}, clientX: rect.left + 18, clientY: rect.bottom - 2 }, tab.id);
+      }
+    });
+    documentTabsList.append(row);
+  }
+}
+
+function openTabContextMenu(event, tabId) {
+  event.preventDefault();
+  state.contextTabId = tabId;
+  tabContextMenu.hidden = false;
+  const width = tabContextMenu.offsetWidth || 150;
+  const height = tabContextMenu.offsetHeight || 112;
+  tabContextMenu.style.left = `${Math.max(8, Math.min(window.innerWidth - width - 8, event.clientX))}px`;
+  tabContextMenu.style.top = `${Math.max(8, Math.min(window.innerHeight - height - 8, event.clientY))}px`;
+  tabContextMenu.querySelector("button")?.focus();
+}
+
+function closeTabContextMenu(event) {
+  if (event?.target?.closest?.("#tabContextMenu")) return;
+  tabContextMenu.hidden = true;
+  state.contextTabId = null;
+}
+
+async function handleTabContextAction(event) {
+  const action = event.target.closest("[data-tab-menu-action]")?.dataset.tabMenuAction;
+  const tabId = state.contextTabId;
+  if (!action || !tabId) return;
+  tabContextMenu.hidden = true;
+  state.contextTabId = null;
+  if (action === "rename") await renameDocumentTab(tabId);
+  if (action === "duplicate") await duplicateDocumentTab(tabId);
+  if (action === "delete") await deleteDocumentTab(tabId);
+}
+
+async function switchDocumentTab(id) {
+  if (id === state.activeDocumentTabId) return;
+  captureActiveTabContent();
+  state.activeDocumentTabId = id;
+  state.editor.setData(activeDocumentTab().content);
+  clearImageSelection();
+  renderDocumentTabs();
+  await saveNow();
+  state.editor.focus();
+}
+
+async function addDocumentTab() {
+  captureActiveTabContent();
+  const tab = { id: makeTabId(), title: `Tab ${state.documentTabs.length + 1}`, content: "<p></p>" };
+  state.documentTabs.push(tab);
+  state.activeDocumentTabId = tab.id;
+  state.editor.setData(tab.content);
+  renderDocumentTabs();
+  await saveNow();
+  state.editor.focus();
+}
+
+async function renameDocumentTab(id) {
+  const tab = state.documentTabs.find((item) => item.id === id);
+  if (!tab) return;
+  const title = window.prompt("Rename document tab", tab.title)?.trim();
+  if (!title) return;
+  tab.title = title;
+  renderDocumentTabs();
+  await saveNow();
+}
+
+async function duplicateDocumentTab(id) {
+  captureActiveTabContent();
+  const source = state.documentTabs.find((item) => item.id === id);
+  if (!source) return;
+  const copy = { id: makeTabId(), title: `${source.title} copy`, content: source.content };
+  const index = state.documentTabs.indexOf(source);
+  state.documentTabs.splice(index + 1, 0, copy);
+  state.activeDocumentTabId = copy.id;
+  state.editor.setData(copy.content);
+  renderDocumentTabs();
+  await saveNow();
+}
+
+async function deleteDocumentTab(id) {
+  if (state.documentTabs.length === 1) return showNotice("A document must keep at least one tab.", true);
+  const tab = state.documentTabs.find((item) => item.id === id);
+  if (!tab || !window.confirm(`Delete “${tab.title}”?`)) return;
+  const index = state.documentTabs.indexOf(tab);
+  state.documentTabs.splice(index, 1);
+  if (state.activeDocumentTabId === id) {
+    const next = state.documentTabs[Math.min(index, state.documentTabs.length - 1)];
+    state.activeDocumentTabId = next.id;
+    state.editor.setData(next.content);
+  }
+  renderDocumentTabs();
+  await saveNow();
 }
 
 function installImageEditing() {
@@ -420,7 +627,12 @@ async function importSelectedFile() {
     state.sourceFormat = extension;
     state.sourceName = file.name;
     titleInput.value = file.name.replace(/\.(docx?|DOCX?)$/, "") || "Untitled document";
-    state.editor.setData(sanitizeImportedHtml(html || ""));
+    const importedHtml = sanitizeImportedHtml(html || "");
+    state.editor.setData(importedHtml);
+    const activeTab = activeDocumentTab();
+    activeTab.content = importedHtml;
+    if (state.documentTabs.length === 1 && /^Tab 1$/i.test(activeTab.title)) activeTab.title = titleInput.value;
+    renderDocumentTabs();
     await saveNow();
     showNotice(`${file.name} opened locally. Complex page layout may be simplified during editing.`);
   } catch (error) {
@@ -457,6 +669,7 @@ function scheduleSave() {
 async function saveNow() {
   clearTimeout(state.saveTimer);
   if (!state.editor || !state.record) return;
+  captureActiveTabContent();
   const notes = await getNotes();
   const index = notes.findIndex((note) => note.id === state.id);
   if (index < 0) return;
@@ -464,7 +677,11 @@ async function saveNow() {
     ...notes[index],
     type: "word",
     title: titleInput.value.trim() || "Untitled document",
-    content: state.editor.getData(),
+    content: activeDocumentTab().content,
+    documentTabs: state.documentTabs.map((tab) => ({ ...tab })),
+    activeDocumentTabId: state.activeDocumentTabId,
+    tabsPanelOpen: state.tabsPanelOpen,
+    tabsPanelSide: state.tabsPanelSide,
     sourceFormat: state.sourceFormat,
     sourceName: state.sourceName,
     viewZoom: state.zoom,

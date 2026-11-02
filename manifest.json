@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Notepad Library",
   "description": "A threaded notepad library with offline Word, rich-text, Markdown, and online notepad editing.",
-  "version": "10.0",
+  "version": "20.0",
   "permissions": [
     "webNavigation",
     "storage",

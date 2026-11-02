@@ -49,6 +49,11 @@ async function init() {
       chooseEditor(option.dataset.editor);
     }
   });
+  editorModal.querySelectorAll(".editor-group").forEach((group) => {
+    group.addEventListener("toggle", () => {
+      if (group.open) editorModal.querySelectorAll(".editor-group").forEach((other) => { if (other !== group) other.open = false; });
+    });
+  });
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape" && !editorModal.hidden) {
       editorModal.hidden = true;

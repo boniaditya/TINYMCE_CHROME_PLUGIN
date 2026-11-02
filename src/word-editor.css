@@ -43,7 +43,33 @@ button:disabled { cursor: wait; opacity: .55; }
   z-index: 20;
 }
 
-.word__identity, .word__actions { align-items: center; display: flex; gap: 10px; }
+.word__identity, .word__actions { align-items: center; display: flex; }
+.word__identity { gap: 10px; width: 100%; }
+.word__actions { gap: 2px; }
+
+/* Document title and menus above a continuous, rounded editing ribbon. */
+.word__bar { align-items: flex-start; flex-direction: column; gap: 0; min-height: 112px; padding: 12px 24px 8px; }
+.word__identity { min-height: 44px; }
+.word__badge { background: #4285f4; border-radius: 5px 11px 5px 5px; }
+.word__title { flex: 1; font-size: 22px; font-weight: 500; max-width: none; min-width: 0; width: 100%; }
+.word__actions { flex-wrap: wrap; min-height: 38px; padding-left: 45px; width: 100%; }
+.word-menu-item { font-size: 14px; font-weight: 500; }
+.word__save { margin-left: auto; }
+.format-toolbar { background: #edf2fa; border: 0; border-radius: 24px; box-shadow: none; gap: 4px; margin: 0 14px; padding: 8px 16px; top: 112px; }
+.format-toolbar button, .format-toolbar select, .format-toolbar__color { font-size: 15px; }
+.format-toolbar__divider { background: #c9ced8; height: 27px; margin: 0 7px; }
+.document-tabs { top: 164px; }
+
+.word-menu-item {
+  background: transparent;
+  border: 0;
+  border-radius: 5px;
+  min-height: 34px;
+  padding: 0 10px;
+}
+.word-menu-item:hover,
+.word-menu-item:focus-visible,
+.word-menu-item[aria-expanded="true"] { background: #edf2f6; border-color: transparent; outline: none; }
 
 .word__badge {
   align-items: center;
@@ -79,16 +105,20 @@ button:disabled { cursor: wait; opacity: .55; }
   font-size: 12px;
   font-weight: 700;
   gap: 6px;
+  margin: 0 3px;
+  padding-left: 8px;
 }
 
 .word__zoom select {
-  background: #fff;
-  border: 1px solid #ccd5de;
-  border-radius: 8px;
+  background: transparent;
+  border: 0;
+  border-radius: 5px;
   color: #24313c;
-  min-height: 36px;
-  padding: 0 8px;
+  font-weight: 700;
+  min-height: 34px;
+  padding: 0 5px;
 }
+.word__zoom select:hover, .word__zoom select:focus { background: #edf2f6; outline: none; }
 
 .word__menu {
   background: #fff;
@@ -106,8 +136,8 @@ button:disabled { cursor: wait; opacity: .55; }
 .word__menu[hidden] { display: none; }
 .word__menu button { border: 0; justify-content: flex-start; text-align: left; }
 
-.word__save { color: #64717c; font-size: 12px; min-width: 88px; }
-.word__settings { font-size: 17px; min-width: 38px; padding: 0; }
+.word__save { color: #64717c; font-size: 12px; margin: 0 8px; min-width: 88px; }
+.word__settings { font-size: 17px; min-width: 34px; padding: 0; }
 
 .word__notice {
   background: #fff8dc;
@@ -118,7 +148,38 @@ button:disabled { cursor: wait; opacity: .55; }
   text-align: center;
 }
 
-.word__paper-wrap { margin: 28px auto 60px; max-width: 920px; padding: 0 22px; }
+.word__workspace { align-items: flex-start; display: flex; min-width: 0; }
+.word__paper-wrap { flex: 1; margin: 28px auto 60px; max-width: 920px; min-width: 0; padding: 0 22px; }
+
+.document-tabs {
+  align-self: stretch;
+  background: #fff;
+  border-right: 1px solid #d4dce3;
+  flex: 0 0 250px;
+  min-height: calc(100vh - 117px);
+  padding: 18px 12px;
+  position: sticky;
+  top: 117px;
+}
+.document-tabs[hidden] { display: none; }
+.document-tabs__head { align-items: center; display: flex; justify-content: space-between; padding: 0 5px 12px; }
+.document-tabs__head strong { font-size: 14px; }
+.document-tabs__controls { display: flex; gap: 4px; }
+.document-tabs__head button { font-size: 17px; height: 30px; min-height: 30px; min-width: 30px; padding: 0; }
+.word__workspace[data-tabs-side="right"] .document-tabs { border-left: 1px solid #d4dce3; border-right: 0; order: 2; }
+.word__workspace[data-tabs-side="right"] .word__paper-wrap { order: 1; }
+.document-tabs__list { display: grid; gap: 2px; }
+.document-tab { border-left: 3px solid transparent; border-radius: 0 6px 6px 0; color: #28343d; cursor: default; font-size: 14px; font-weight: 650; overflow: hidden; padding: 10px 9px; text-overflow: ellipsis; user-select: none; white-space: nowrap; }
+.document-tab:hover { background: #f2f5f7; }
+.document-tab:focus-visible { outline: 2px solid #6b9ad7; outline-offset: -2px; }
+.document-tab.is-active { background: #e8f0fe; border-left-color: #185abd; color: #174a91; }
+.document-tabs__hint { color: #77848e; font-size: 11px; line-height: 1.45; margin: 16px 6px 0; }
+
+.tab-context-menu { background: #fff; border: 1px solid #ccd5de; border-radius: 9px; box-shadow: 0 12px 32px rgb(20 33 44 / 22%); display: grid; min-width: 150px; padding: 5px; position: fixed; z-index: 80; }
+.tab-context-menu[hidden] { display: none; }
+.tab-context-menu button { background: transparent; border: 0; border-radius: 6px; justify-content: flex-start; min-height: 34px; padding: 0 11px; text-align: left; }
+.tab-context-menu button:hover, .tab-context-menu button:focus { background: #edf2f5; outline: none; }
+.tab-context-menu button.danger { color: #a12828; }
 
 .format-toolbar {
   align-items: center;
@@ -246,16 +307,19 @@ button:disabled { cursor: wait; opacity: .55; }
 .crop-dialog__apply { background: #185abd; border-color: #185abd; color: #fff; }
 
 @media (max-width: 780px) {
-  .word__bar { align-items: stretch; flex-direction: column; }
+  .word__bar { align-items: stretch; }
   .word__identity, .word__actions { flex-wrap: wrap; }
+  .word__actions { padding-left: 0; }
   .word__title { max-width: none; min-width: 0; width: 100%; }
-  .format-toolbar { top: 122px; }
+  .format-toolbar { top: 130px; margin: 0 6px; }
   .native-editor { padding: 28px 24px; }
+  .document-tabs { flex-basis: 210px; position: fixed; top: 175px; bottom: 0; left: 0; z-index: 18; box-shadow: 8px 0 24px rgb(20 33 44 / 16%); }
+  .word__workspace[data-tabs-side="right"] .document-tabs { left: auto; right: 0; box-shadow: -8px 0 24px rgb(20 33 44 / 16%); }
 }
 
 @media print {
   body { background: #fff; }
-  .word__bar, .word__notice, .format-toolbar, #page-studio-notepad-sidebar { display: none !important; }
+  .word__bar, .word__notice, .format-toolbar, .document-tabs, #page-studio-notepad-sidebar { display: none !important; }
   .word__paper-wrap { margin: 0; max-width: none; padding: 0; }
   .native-editor {
     box-shadow: none;

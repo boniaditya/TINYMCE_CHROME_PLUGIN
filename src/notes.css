@@ -361,9 +361,16 @@ p {
 
 .modal__options {
   display: grid;
-  gap: 8px;
+  gap: 14px;
   margin-top: 2px;
 }
+
+.editor-group summary { color: #34434c; cursor: pointer; font-size: 15px; font-weight: 800; letter-spacing: 0; list-style: none; margin: 0 2px; padding: 8px 0; }
+.editor-group summary::-webkit-details-marker { display: none; }
+.editor-group summary::after { content: '+'; float: right; font-size: 20px; font-weight: 500; line-height: 16px; }
+.editor-group[open] summary::after { content: '−'; }
+.editor-group summary:focus-visible { outline: 2px solid #0d9276; outline-offset: 2px; }
+.editor-group__items { display: grid; gap: 7px; margin-top: 5px; }
 
 .opt {
   align-items: center;

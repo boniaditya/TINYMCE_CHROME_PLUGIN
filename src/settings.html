@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Notepad Library settings</title>
-    <link rel="stylesheet" href="settings.css?v=10.0">
+    <link rel="stylesheet" href="settings.css?v=20.0">
   </head>
   <body>
     <main class="settings">
@@ -13,6 +13,13 @@
         <button id="closeButton" class="icon-button" type="button" title="Close settings" aria-label="Close settings">×</button>
       </header>
 
+      <nav class="settings-tabs" role="tablist" aria-label="Settings sections">
+        <button id="generalTab" class="settings-tab is-active" type="button" role="tab" aria-selected="true" aria-controls="generalPanel" data-settings-tab="generalPanel">General</button>
+        <button id="backupTab" class="settings-tab" type="button" role="tab" aria-selected="false" aria-controls="backupPanel" data-settings-tab="backupPanel" tabindex="-1">Backup</button>
+        <button id="extensionsTab" class="settings-tab" type="button" role="tab" aria-selected="false" aria-controls="extensionsPanel" data-settings-tab="extensionsPanel" tabindex="-1">More extensions</button>
+      </nav>
+
+      <div id="generalPanel" class="settings-panel is-active" role="tabpanel" aria-labelledby="generalTab">
       <section class="card">
         <h2>General</h2>
         <label class="field"><span><strong>Default editor</strong><small>Skip the editor chooser when creating a note.</small></span>
@@ -26,6 +33,10 @@
         <p id="saveStatus" class="status" aria-live="polite">Settings are saved automatically.</p>
       </section>
 
+      <section class="card card--danger"><h2>Reset preferences</h2><p>Return settings to their defaults. Your notes and documents will not be removed.</p><button id="resetButton" type="button">Reset settings</button></section>
+      </div>
+
+      <div id="backupPanel" class="settings-panel" role="tabpanel" aria-labelledby="backupTab" hidden>
       <section class="card">
         <h2>Backup and restore</h2>
         <p>Save every note, folder, document, preference, and link-history entry in one file. Keep it outside the extension so you can restore after reinstalling.</p>
@@ -33,10 +44,26 @@
         <input id="restoreBackupInput" type="file" accept="application/json,.json" hidden>
         <p id="backupStatus" class="status" aria-live="polite" hidden></p>
       </section>
+      </div>
 
-      <section class="card card--danger"><h2>Reset preferences</h2><p>Return settings to their defaults. Your notes and documents will not be removed.</p><button id="resetButton" type="button">Reset settings</button></section>
+      <div id="extensionsPanel" class="settings-panel" role="tabpanel" aria-labelledby="extensionsTab" hidden>
+        <section class="card">
+          <div class="extensions-heading">
+            <div><h2>More extensions from us</h2><p>Explore our other lightweight browser tools on the Chrome Web Store.</p></div>
+            <a class="publisher-link" href="https://chromewebstore.google.com/search/boni%20aditya" target="_blank" rel="noopener noreferrer">View all</a>
+          </div>
+          <div class="extension-list">
+            <a class="extension-item" href="https://chromewebstore.google.com/detail/eventlistener/icmchdmikjlbfimajdkioealfhmbdmmb" target="_blank" rel="noopener noreferrer"><span class="extension-icon">EL</span><span><strong>EVENTLISTENER</strong><small>Monitor tab and page conditions, then run actions when your rules are met.</small></span><span class="extension-arrow" aria-hidden="true">↗</span></a>
+            <a class="extension-item" href="https://chromewebstore.google.com/detail/total-recall-clipboard/ohnmllcijffjdennapejjhojlfaailff" target="_blank" rel="noopener noreferrer"><span class="extension-icon">TR</span><span><strong>Total Recall Clipboard</strong><small>Save and organize copied browser content locally with search, export, and backup tools.</small></span><span class="extension-arrow" aria-hidden="true">↗</span></a>
+            <a class="extension-item" href="https://chromewebstore.google.com/detail/fun-lines/kooafpgognonljchplfnjjomgklgldke" target="_blank" rel="noopener noreferrer"><span class="extension-icon">FL</span><span><strong>Fun Lines</strong><small>Replace mapped words on websites with cheerful emoji and local vector icons.</small></span><span class="extension-arrow" aria-hidden="true">↗</span></a>
+            <a class="extension-item" href="https://chromewebstore.google.com/detail/webarchive-pilot/nldimjmfdaemkpigooffcacjlodccklb" target="_blank" rel="noopener noreferrer"><span class="extension-icon">WA</span><span><strong>WebArchive Pilot</strong><small>Save, bundle, reopen, and export webpage archives in several formats.</small></span><span class="extension-arrow" aria-hidden="true">↗</span></a>
+            <a class="extension-item" href="https://chromewebstore.google.com/detail/todolist-cart/hhldmoakcafcdilidkdbpaeokfmbmdpk" target="_blank" rel="noopener noreferrer"><span class="extension-icon">TC</span><span><strong>ToDoList Cart</strong><small>A shopping-inspired task cart for adding, completing, and checking out todos.</small></span><span class="extension-arrow" aria-hidden="true">↗</span></a>
+          </div>
+          <p class="promotion-note">These are promotional links and open the Chrome Web Store in a new tab.</p>
+        </section>
+      </div>
       <footer>Notepad Library <span id="versionLabel"></span></footer>
     </main>
-    <script src="settings.js?v=10.0"></script>
+    <script src="settings.js?v=20.0"></script>
   </body>
 </html>

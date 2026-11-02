@@ -97,15 +97,25 @@
           </div>
           <p class="modal__sub">Where do you want to write?</p>
           <div class="modal__options">
-            <button class="opt" type="button" data-editor="notepad"><span class="opt__icon">🌐</span><span class="opt__text"><span class="opt__title">notepad.pw</span><span class="opt__desc">Open a fresh online notepad page</span></span></button>
-            <button class="opt" type="button" data-editor="notepadcc"><span class="opt__icon">🗒️</span><span class="opt__text"><span class="opt__title">notepad.cc</span><span class="opt__desc">Open a fresh notepad.cc page</span></span></button>
-            <button class="opt" type="button" data-editor="word"><span class="opt__icon">W</span><span class="opt__text"><span class="opt__title">Word Document</span><span class="opt__desc">Edit .doc and .docx files offline</span></span></button>
-            <button class="opt" type="button" data-editor="ckeditor"><span class="opt__icon">CK</span><span class="opt__text"><span class="opt__title">CKEditor</span><span class="opt__desc">Classic rich text editor</span></span></button>
-            <button class="opt" type="button" data-editor="tinymce"><span class="opt__icon">✍️</span><span class="opt__text"><span class="opt__title">TinyMCE</span><span class="opt__desc">Rich text editor with a toolbar</span></span></button>
-            <button class="opt" type="button" data-editor="tiptap"><span class="opt__icon">⚡</span><span class="opt__text"><span class="opt__title">Tiptap</span><span class="opt__desc">Minimal keyboard-first editor</span></span></button>
-            <button class="opt" type="button" data-editor="milkdown"><span class="opt__icon">W</span><span class="opt__text"><span class="opt__title">Milkdown</span><span class="opt__desc">WYSIWYG Markdown editor</span></span></button>
-            <button class="opt" type="button" data-editor="markdown"><span class="opt__icon">MD</span><span class="opt__text"><span class="opt__title">Markdown</span><span class="opt__desc">Write with source and preview panes</span></span></button>
-            <button class="opt" type="button" data-editor="plain"><span class="opt__icon">📝</span><span class="opt__text"><span class="opt__title">Plain Text</span><span class="opt__desc">A simple distraction-free notepad</span></span></button>
+            <details class="editor-group" open><summary>Online Notepads</summary><div class="editor-group__items">
+              <button class="opt" type="button" data-editor="notepad"><span class="opt__icon">🌐</span><span class="opt__text"><span class="opt__title">notepad.pw</span><span class="opt__desc">Open a fresh online notepad page</span></span></button>
+              <button class="opt" type="button" data-editor="notepadcc"><span class="opt__icon">🗒️</span><span class="opt__text"><span class="opt__title">notepad.cc</span><span class="opt__desc">Open a fresh notepad.cc page</span></span></button>
+            </div></details>
+            <details class="editor-group"><summary>Word Editor</summary><div class="editor-group__items">
+              <button class="opt" type="button" data-editor="word"><span class="opt__icon">W</span><span class="opt__text"><span class="opt__title">Word Document</span><span class="opt__desc">Edit .doc and .docx files offline</span></span></button>
+            </div></details>
+            <details class="editor-group"><summary>HTML &amp; Rich Text Editors</summary><div class="editor-group__items">
+              <button class="opt" type="button" data-editor="ckeditor"><span class="opt__icon">CK</span><span class="opt__text"><span class="opt__title">CKEditor</span><span class="opt__desc">Classic rich text editor</span></span></button>
+              <button class="opt" type="button" data-editor="tinymce"><span class="opt__icon">✍️</span><span class="opt__text"><span class="opt__title">TinyMCE</span><span class="opt__desc">Rich text editor with a toolbar</span></span></button>
+              <button class="opt" type="button" data-editor="tiptap"><span class="opt__icon">⚡</span><span class="opt__text"><span class="opt__title">Tiptap</span><span class="opt__desc">Minimal keyboard-first editor</span></span></button>
+            </div></details>
+            <details class="editor-group"><summary>Markdown Editors</summary><div class="editor-group__items">
+              <button class="opt" type="button" data-editor="milkdown"><span class="opt__icon">W</span><span class="opt__text"><span class="opt__title">Milkdown</span><span class="opt__desc">WYSIWYG Markdown editor</span></span></button>
+              <button class="opt" type="button" data-editor="markdown"><span class="opt__icon">MD</span><span class="opt__text"><span class="opt__title">Markdown</span><span class="opt__desc">Write with source and preview panes</span></span></button>
+            </div></details>
+            <details class="editor-group"><summary>Plain Text</summary><div class="editor-group__items">
+              <button class="opt" type="button" data-editor="plain"><span class="opt__icon">📝</span><span class="opt__text"><span class="opt__title">Plain Text</span><span class="opt__desc">A simple distraction-free notepad</span></span></button>
+            </div></details>
           </div>
         </div>
       </div>
@@ -160,6 +170,11 @@
       modal.hidden = true;
       chooseEditor(option.dataset.editor, wantsNewTab(event));
     }
+  });
+  modal.querySelectorAll(".editor-group").forEach((group) => {
+    group.addEventListener("toggle", () => {
+      if (group.open) modal.querySelectorAll(".editor-group").forEach((other) => { if (other !== group) other.open = false; });
+    });
   });
   clearButton.addEventListener("click", clearAll);
   document.addEventListener("keydown", (event) => {
@@ -1419,6 +1434,7 @@
         position: relative; background: #ffffff; border-radius: 14px;
         box-shadow: 0 24px 60px rgba(15, 22, 27, 0.28);
         display: grid; gap: 10px; padding: 18px; width: min(340px, 90vw);
+        max-height: calc(100vh - 32px); overflow-y: auto;
       }
       .modal__head { display: flex; align-items: center; justify-content: space-between; }
       .modal__head strong { font-size: 17px; }
@@ -1428,7 +1444,13 @@
       }
       .modal__close:hover { background: #e6ebee; }
       .modal__sub { color: #5f6b74; font-size: 13px; margin: 0; }
-      .modal__options { display: grid; gap: 8px; margin-top: 4px; }
+      .modal__options { display: grid; gap: 14px; margin-top: 4px; }
+      .editor-group summary { color: #34434c; cursor: pointer; font-size: 15px; font-weight: 800; letter-spacing: 0; list-style: none; margin: 0 2px; padding: 8px 0; }
+      .editor-group summary::-webkit-details-marker { display: none; }
+      .editor-group summary::after { content: '+'; float: right; font-size: 20px; font-weight: 500; line-height: 16px; }
+      .editor-group[open] summary::after { content: '−'; }
+      .editor-group summary:focus-visible { outline: 2px solid #0d9276; outline-offset: 2px; }
+      .editor-group__items { display: grid; gap: 7px; margin-top: 5px; }
       .opt {
         display: flex; align-items: center; gap: 12px; text-align: left;
         background: #f7f9fa; border: 1px solid #e2e7eb; border-radius: 10px;
